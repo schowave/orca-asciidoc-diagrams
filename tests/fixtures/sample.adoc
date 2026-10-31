@@ -1,0 +1,67 @@
+= AsciiDoc Diagrams Sample
+:toc:
+
+A paragraph with *bold*, _italic_ and `code`.
+
+NOTE: This is an admonition.
+
+== PlantUML
+
+.Sequence
+[plantuml]
+----
+Alice -> Bob : Hello
+Bob --> Alice : Hi
+----
+
+[plantuml]
+----
+@startuml
+class Car {
+  +drive()
+}
+interface Vehicle
+Vehicle <|.. Car
+Car "1" *-- "4" Wheel
+@enduml
+----
+
+== Mermaid
+
+[mermaid]
+----
+graph TD
+  A[Start] --> B{OK?}
+  B -->|yes| C[Done]
+  B -->|no| A
+----
+
+[mermaid]
+----
+sequenceDiagram
+  Alice->>Bob: Hi
+  Bob-->>Alice: Hello
+----
+
+== Broken diagram
+
+[mermaid]
+----
+graph TD
+  A --> --> ???
+----
+
+== Code
+
+[source,plantuml]
+----
+Alice -> Bob : shown as code
+----
+
+== Passthrough
+
+++++
+<p>Passthrough <b>HTML</b> is kept.</p>
+<script>window.__pwned = true</script>
+<img src="x" onerror="window.__pwned = true">
+++++

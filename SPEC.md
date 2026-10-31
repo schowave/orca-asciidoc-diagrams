@@ -83,3 +83,13 @@ The frame has no file system, no network and no wasm. As a result:
 1. **Spike:** a minimal custom editor in real Orca 1.4.245 that renders one PlantUML and one Mermaid block inside an `.adoc`. This is the main risk, because so far it is only verified in headless Chrome
 2. Full v1 per this spec
 3. README, test suite and release; then the catalog
+
+## Implementation notes (from the spike)
+
+- asciidoctor.js 4 is a native ESM port (no Opal) and runs under the CSP
+  - `convert()` and `reader.readLines()` are async
+  - Block processors use `reader.getLines()`
+  - Mark `node:*` as external in esbuild
+- DOMPurify drops attributes whose value contains `-->`, so diagram sources must not travel in `data-*` attributes. They are kept in a side table, indexed by placeholder
+- Orca's frame shell cancels **every** click on `<a href>`. For internal anchors (`<<id>>`, TOC) we need our own click handler that scrolls to the target
+- The spike build is 7.31 MiB, without the stdlib bundles

@@ -1,0 +1,22 @@
+{
+  "manifestVersion": 2,
+  "execution": "sandboxed-ui",
+  "id": "asciidoc-diagrams",
+  "publisher": "schowave",
+  "name": "AsciiDoc Preview – PlantUML & Mermaid",
+  "version": "0.1.0",
+  "description": "Renders AsciiDoc files with inline PlantUML and Mermaid diagrams, fully offline.",
+  "license": "MIT",
+  "engines": { "orca": ">=1.4.245" },
+  "contributes": {
+    "customEditors": [
+      {
+        "id": "asciidoc-preview",
+        "title": "Preview",
+        "extensions": [".adoc", ".asciidoc", ".asc"],
+        "entry": "editor/index.html",
+        "priority": "default"
+      }
+    ]
+  }
+}
