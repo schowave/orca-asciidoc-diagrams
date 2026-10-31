@@ -41,7 +41,7 @@ ${script(nm('mermaid/dist/mermaid.min.js'))}
 ${script(app.outputFiles[0].text)}
 `
 
-fs.rmSync(OUT, { recursive: true, force: true })
+// Overwrite in place, never delete OUT: Orca watches it as a development folder.
 fs.mkdirSync(path.join(OUT, 'editor'), { recursive: true })
 fs.copyFileSync(path.join(ROOT, 'plugin/orca-plugin.json'), path.join(OUT, 'orca-plugin.json'))
 fs.copyFileSync(path.join(ROOT, 'LICENSE'), path.join(OUT, 'LICENSE'))
