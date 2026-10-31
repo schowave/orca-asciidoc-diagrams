@@ -126,8 +126,12 @@ Design decisions are in [SPEC.md](SPEC.md).
 
 ## Development
 
+Tool versions are pinned in [`mise.toml`](mise.toml), with checksums in `mise.lock`. CI uses the same files, so local and remote builds run on the same Node.
+
 ```sh
+mise install           # installs the pinned Node (https://mise.jdx.dev)
 npm ci
+npx playwright install chromium
 npm test               # build + render the fixtures in headless Chromium inside a replica of Orca's frame
 npm run media          # regenerate images/ and docs/media/demo.gif from the build
 ```

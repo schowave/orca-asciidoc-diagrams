@@ -1,0 +1,4 @@
+# Tool versions for local development and CI (jdx/mise-action reads this file).
+# Run `mise install` once; mise then puts these versions on PATH inside this directory.
+[tools]
+node = "26.13.0"

@@ -12,11 +12,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
+      - uses: actions/checkout@v7
+      # Installs the tool versions from mise.toml, the same ones used locally.
+      - uses: jdx/mise-action@v5
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Build and test in a replica of Orca's sandboxed frame
