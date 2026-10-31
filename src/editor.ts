@@ -50,9 +50,21 @@ function renderPlantUml(src: string): Promise<string> {
 }
 
 async function renderMermaid(src: string): Promise<string> {
-  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: isDark() ? 'dark' : 'default' })
-  const { svg } = await mermaid.render(`mermaid-${++mermaidSeq}`, src)
-  return svg
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'strict',
+    suppressErrorRendering: true, // we show our own error box instead of mermaid's appended error SVG
+    theme: isDark() ? 'dark' : 'default',
+  })
+  const id = `mermaid-${++mermaidSeq}`
+  try {
+    const { svg } = await mermaid.render(id, src)
+    return svg
+  } finally {
+    // mermaid renders into a temporary element on <body>; make sure nothing is left behind.
+    document.getElementById(id)?.remove()
+    document.getElementById(`d${id}`)?.remove()
+  }
 }
 
 function renderDiagram(kind: Kind, src: string): Promise<string> {
@@ -60,8 +72,8 @@ function renderDiagram(kind: Kind, src: string): Promise<string> {
   let p = cache.get(key)
   if (!p) {
     p = kind === 'plantuml' ? renderPlantUml(src) : renderMermaid(src)
-    cache.set(key, p)
-    p.catch(() => cache.delete(key))
+    cache.set(key, p) // failures are cached too: the same source fails the same way
+    p.catch(() => {})
   }
   return p
 }
@@ -104,7 +116,11 @@ async function render(text: string) {
 }
 
 let timer: ReturnType<typeof setTimeout> | undefined
+let lastVersion = -1
 function schedule(doc: Doc) {
+  // onDidChange also delivers the current document right away; skip versions we already have.
+  if (doc.version === lastVersion) return
+  lastVersion = doc.version
   clearTimeout(timer)
   timer = setTimeout(() => render(doc.content.text).catch(showFatal), 250)
 }
@@ -116,6 +132,7 @@ function showFatal(e: unknown) {
 
 async function main() {
   const doc: Doc = await orca.document.get()
+  lastVersion = doc.version
   render(doc.content.text).catch(showFatal)
   orca.document.onDidChange((d: Doc) => schedule(d))
   orca.on('theme', () => {

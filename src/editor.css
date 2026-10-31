@@ -24,4 +24,4 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--border); p
 .diagram { overflow-x: auto; }
 .diagram svg { max-width: none; height: auto; }
 .diagram[data-kind="plantuml"].rendered { background: #ffffff; border-radius: 6px; padding: 8px; display: inline-block; max-width: 100%; box-sizing: border-box; }
-.diagram-error { border: 1px solid #d1242f; background: color-mix(in srgb, #d1242f 10%, var(--bg)); padding: 8px 12px; border-radius: 6px; }
+.diagram-error { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; border: 1px solid #d1242f; background: color-mix(in srgb, #d1242f 10%, var(--bg)); padding: 8px 12px; border-radius: 6px; }

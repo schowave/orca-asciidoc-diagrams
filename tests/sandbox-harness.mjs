@@ -34,7 +34,8 @@ window.addEventListener('unhandledrejection', e => __errors.push('unhandled: ' +
     on: (ev, f) => { (listeners[ev] ||= []).push(f); return { dispose() {} } },
     document: Object.freeze({
       get: async () => doc,
-      onDidChange: (f) => { listeners.change.push(f); return { dispose() {} } },
+      // Like Orca: deliver the current document right away, then each change.
+      onDidChange: (f) => { listeners.change.push(f); f(doc); return { dispose() {} } },
       applyEdit: async () => { window.__applyEditCalled = true },
     }),
   });
@@ -86,6 +87,7 @@ for (const dark of [false, true]) {
     rendered: Array.from(document.querySelectorAll('.diagram.rendered')).map(e => e.dataset.kind),
     failed: Array.from(document.querySelectorAll('.diagram.failed')).map(e => e.dataset.kind + ': ' + e.textContent.slice(0, 120)),
     scriptsInContent: document.querySelectorAll('#content script').length,
+    strayBodyElements: Array.from(document.body.children).filter(e => !['content'].includes(e.id) && !['SCRIPT', 'STYLE', 'META'].includes(e.tagName)).map(e => e.tagName + '#' + e.id),
     pwned: !!window.__pwned,
     applyEdit: !!window.__applyEditCalled,
     violations: window.__violations,
@@ -97,7 +99,7 @@ for (const dark of [false, true]) {
   const expectRendered = 4 // see tests/fixtures/sample.adoc
   const expectFailed = 1
   if (r.rendered.length !== expectRendered || r.failed.length !== expectFailed || r.violations.length ||
-      r.errors.length || r.scriptsInContent || r.pwned || r.applyEdit || live !== 2) {
+      r.errors.length || r.strayBodyElements.length || r.scriptsInContent || r.pwned || r.applyEdit || live !== 2) {
     failed = true
     console.error(`✗ ${name}: unexpected result`)
   } else console.log(`✓ ${name}`)
