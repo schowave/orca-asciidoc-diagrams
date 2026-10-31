@@ -80,7 +80,13 @@ Requires **Orca 1.4.245 or newer**.
 
 ### From the Git URL
 
-Install `https://github.com/schowave/orca-asciidoc-diagrams` as a Git URL plugin in Orca. Orca installs the newest release tag. Orca marks plugins installed this way as *Unverified*, and they update only when you click **Update**.
+In Orca:
+
+1. Settings → Plugins → install a plugin
+2. Choose **Git URL**
+3. Enter the repository URL with a release tag, for example `https://github.com/schowave/orca-asciidoc-diagrams#v1.0.0`. The newest tag is on the [releases page](https://github.com/schowave/orca-asciidoc-diagrams/releases)
+
+Orca marks plugins installed this way as *Unverified*, and they update only when you click **Update**.
 
 ### From source
 
