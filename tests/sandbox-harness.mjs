@@ -42,11 +42,24 @@ window.addEventListener('unhandledrejection', e => __errors.push('unhandled: ' +
 })();
 </script>`
 
-const shell = (dark) =>
+// Subset of Orca's shell script: it cancels every click on <a href> (plugin-panel-shell.ts).
+const ORCA_SHELL_POLICY = `<script>
+window.addEventListener('click', function (event) {
+  var node = event.target
+  while (node && node !== document) {
+    if (node.nodeType === 1 && node.tagName === 'A' && node.hasAttribute('href')) {
+      event.preventDefault(); event.stopImmediatePropagation(); return
+    }
+    node = node.parentNode
+  }
+}, true)
+</script>`
+
+const shell = (dark, text = sample) =>
   `<!doctype html>\n<html class="${dark ? 'dark' : 'light'}">\n<head>\n<meta charset="utf-8">\n` +
   `<meta http-equiv="Content-Security-Policy" content="${CSP}">\n` +
   `<style>:root{--orca-background:${dark ? '#1e1e1e' : '#ffffff'};--orca-foreground:${dark ? '#d4d4d4' : '#1f2328'};--orca-primary:#3b82f6}</style>\n` +
-  mockOrca(sample, dark) +
+  mockOrca(text, dark) + ORCA_SHELL_POLICY +
   `</head>\n` +
   pluginHtml
 
@@ -105,5 +118,43 @@ for (const dark of [false, true]) {
   } else console.log(`✓ ${name}`)
   await page.close()
 }
+
+// v1 features: toc sidebar, link handling, include/image placeholders, bundled stdlib.
+{
+  const page = await browser.newPage({ viewport: { width: 1100, height: 700 } })
+  const features = fs.readFileSync(path.join(ROOT, 'tests/fixtures/features.adoc'), 'utf8')
+  const srcdoc = shell(false, features).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+  await page.setContent(`<!doctype html><meta charset="utf-8"><body style="margin:0">` +
+    `<iframe sandbox="allow-scripts" style="width:100%;height:100vh;border:0" srcdoc="${srcdoc}"></iframe>`)
+  const frame = page.frames()[1]
+  await frame.waitForFunction(() => document.documentElement.dataset.renderState === 'done', null, { timeout: 30000 })
+  const before = await frame.evaluate(() => window.scrollY)
+  await page.screenshot({ path: path.join(OUT, 'features.png') })
+  await frame.click('#content .doc-main a.link-internal[data-href="#deep"]')
+  await frame.waitForTimeout(200)
+  const r = await frame.evaluate(() => {
+    const d = Array.from(document.querySelectorAll('.diagram'))
+    return {
+      sidebar: !!document.querySelector('#content.with-toc-left > .toc-sidebar #toc'),
+      hrefsLeft: document.querySelectorAll('#content a[href]').length,
+      externalTitle: document.querySelector('a.link-external')?.title,
+      include: document.querySelector('.unresolved-include')?.textContent.trim(),
+      imagePlaceholders: document.querySelectorAll('.image-placeholder').length,
+      nonDataImgs: Array.from(document.querySelectorAll('#content img')).filter(i => !i.src.startsWith('data:')).length,
+      c4: d[0]?.classList.contains('rendered') && /Uses/.test(d[0].innerHTML) && !/not bundled|Error/i.test(d[0].textContent),
+      notBundled: (d[1]?.textContent || '') + (d[1]?.innerHTML.match(/not bundled[^<]*/)?.[0] || ''),
+      scrollY: window.scrollY,
+      violations: window.__violations,
+      errors: window.__errors,
+    }
+  })
+  console.log('features', JSON.stringify({ ...r, notBundled: r.notBundled.slice(0, 200), before }, null, 1))
+  const ok = r.sidebar && r.hrefsLeft === 0 && r.externalTitle === 'https://example.com' &&
+    /chapters\/intro\.adoc/.test(r.include || '') && r.imagePlaceholders === 2 && r.nonDataImgs === 0 &&
+    r.c4 && /not bundled/.test(r.notBundled) && r.scrollY > before + 100 && !r.violations.length && !r.errors.length
+  if (!ok) { failed = true; console.error('✗ features: unexpected result') } else console.log('✓ features')
+  await page.close()
+}
+
 await browser.close()
 process.exit(failed ? 1 : 0)

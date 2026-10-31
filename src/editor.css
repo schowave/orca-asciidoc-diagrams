@@ -25,3 +25,24 @@ table { border-collapse: collapse; } th, td { border: 1px solid var(--border); p
 .diagram svg { max-width: none; height: auto; }
 .diagram[data-kind="plantuml"].rendered { background: #ffffff; border-radius: 6px; padding: 8px; display: inline-block; max-width: 100%; box-sizing: border-box; }
 .diagram-error { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; border: 1px solid #d1242f; background: color-mix(in srgb, #d1242f 10%, var(--bg)); padding: 8px 12px; border-radius: 6px; }
+
+/* Links: Orca blocks real navigation, so links are rewritten to data-href (see rewriteLinks). */
+a.link-internal, a.link-external { color: var(--accent); text-decoration: underline; }
+a.link-internal { cursor: pointer; }
+a.link-external { cursor: help; text-decoration-style: dotted; }
+
+/* Placeholders for what the sandbox cannot load. */
+.image-placeholder { display: inline-block; padding: 4px 8px; border: 1px dashed var(--border); border-radius: 4px; color: var(--muted); font-size: .9em; }
+.unresolved-include { border: 1px dashed var(--border); border-radius: 6px; padding: 0 12px; color: var(--muted); font-size: .9em; margin: 1em 0; }
+
+/* toc: left / right */
+#content.with-toc-left, #content.with-toc-right { max-width: 1240px; display: flex; gap: 40px; align-items: flex-start; }
+#content.with-toc-right { flex-direction: row-reverse; }
+.toc-sidebar { flex: 0 0 240px; position: sticky; top: 0; max-height: 100vh; overflow-y: auto; padding-top: 8px; font-size: .9em; }
+.toc-sidebar ul { padding-left: 1.1em; }
+.doc-main { flex: 1 1 auto; min-width: 0; }
+#toctitle { font-weight: 600; margin-bottom: .4em; }
+@media (max-width: 800px) {
+  #content.with-toc-left, #content.with-toc-right { display: block; }
+  .toc-sidebar { position: static; max-height: none; }
+}

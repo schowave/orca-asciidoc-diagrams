@@ -19,6 +19,27 @@ const exportStmt = /export\{(\w+) as render,(\w+) as renderToString\};?\s*$/
 if (!exportStmt.test(plantumlJs)) throw new Error('Unexpected @plantuml/core export footer; update build.mjs')
 const plantumlClassic = plantumlJs.replace(exportStmt, 'globalThis.PlantUML={render:$1,renderToString:$2};')
 
+// PlantUML stdlib bundles (vendor/plantuml-stdlib, see scripts/fetch-stdlib.mjs). Each bundle is an
+// IIFE that registers itself on window; we wrap it in a function so it only runs when a diagram needs it.
+const STDLIB = ['c4', 'kubernetes', 'azure']
+const stdlibJs = 'window.__pumlStdlib={' + STDLIB.map((lib) =>
+  `${JSON.stringify(lib)}:function(){${fs.readFileSync(path.join(ROOT, 'vendor/plantuml-stdlib', `${lib}.min.js`), 'utf8')}\n}`
+).join(',') + '};'
+
+// asciidoctor's browser build still has guarded `import('node:…')` calls (fs, path). Left external,
+// they trigger a CSP script-src violation in the frame. Resolve them to a module that throws on load,
+// which is exactly the "not in Node" case asciidoctor already handles.
+const nodeBuiltinStub = {
+  name: 'node-builtin-stub',
+  setup(build) {
+    build.onResolve({ filter: /^node:/ }, (args) => ({ path: args.path, namespace: 'node-stub' }))
+    build.onLoad({ filter: /.*/, namespace: 'node-stub' }, (args) => ({
+      contents: `throw new Error(${JSON.stringify(args.path + ' is not available in the preview')})`,
+      loader: 'js',
+    }))
+  },
+}
+
 const app = await esbuild.build({
   entryPoints: [path.join(ROOT, 'src/editor.ts')],
   bundle: true,
@@ -28,7 +49,7 @@ const app = await esbuild.build({
   target: 'es2022',
   minify: true,
   legalComments: 'none',
-  external: ['node:*'], // dynamic Node-only imports in asciidoctor, never reached in the browser
+  plugins: [nodeBuiltinStub],
 })
 const css = fs.readFileSync(path.join(ROOT, 'src/editor.css'), 'utf8')
 
@@ -38,6 +59,7 @@ const html = `<meta charset="utf-8">
 ${script(nm('@plantuml/core/themes.js'))}
 ${script(plantumlClassic)}
 ${script(nm('mermaid/dist/mermaid.min.js'))}
+${script(stdlibJs)}
 ${script(app.outputFiles[0].text)}
 `
 
@@ -45,6 +67,7 @@ ${script(app.outputFiles[0].text)}
 fs.mkdirSync(path.join(OUT, 'editor'), { recursive: true })
 fs.copyFileSync(path.join(ROOT, 'plugin/orca-plugin.json'), path.join(OUT, 'orca-plugin.json'))
 fs.copyFileSync(path.join(ROOT, 'LICENSE'), path.join(OUT, 'LICENSE'))
+fs.copyFileSync(path.join(ROOT, 'THIRD_PARTY_NOTICES.md'), path.join(OUT, 'THIRD_PARTY_NOTICES.md'))
 fs.writeFileSync(path.join(OUT, 'editor/index.html'), html)
 
 const bytes = Buffer.byteLength(html)

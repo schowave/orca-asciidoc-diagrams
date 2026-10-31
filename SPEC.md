@@ -89,7 +89,7 @@ The frame has no file system, no network and no wasm. As a result:
 - asciidoctor.js 4 is a native ESM port (no Opal) and runs under the CSP
   - `convert()` and `reader.readLines()` are async
   - Block processors use `reader.getLines()`
-  - Mark `node:*` as external in esbuild
+  - Its guarded `import('node:…')` calls are resolved to a throwing stub at build time; left external, they cause CSP violations
 - DOMPurify drops attributes whose value contains `-->`, so diagram sources must not travel in `data-*` attributes. They are kept in a side table, indexed by placeholder
 - Orca's frame shell cancels **every** click on `<a href>`. For internal anchors (`<<id>>`, TOC) we need our own click handler that scrolls to the target
-- The spike build is 7.31 MiB, without the stdlib bundles
+- Entry size: 7.31 MiB for the spike, 8.29 MiB with the C4, Kubernetes and Azure stdlib bundles
