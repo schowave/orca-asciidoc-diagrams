@@ -22,9 +22,11 @@ async function waitRendered(frame) {
   await frame.waitForFunction(() => document.documentElement.dataset.renderState === 'done', null, { timeout: 60000 })
 }
 
-// --- Screenshots (1600×1000, light and dark) -------------------------------------------------------
-async function screenshot(dark, file, viewport = { width: 1600, height: 1000 }) {
-  const page = await browser.newPage({ viewport })
+// --- Screenshots (1280×800 CSS px at 2×, i.e. 2560×1600; light and dark) ----------------------------
+// Orca's minimum screenshot size is 1280×800; using it as the CSS viewport keeps text readable in the
+// listing's thumbnails, and the 2× pixel ratio keeps it sharp.
+async function screenshot(dark, file, viewport = { width: 1280, height: 800 }, deviceScaleFactor = 2) {
+  const page = await browser.newPage({ viewport, deviceScaleFactor })
   await page.setContent(hostPage(dark, demo))
   const frame = page.frames()[1]
   await waitRendered(frame)
@@ -36,7 +38,7 @@ await screenshot(false, path.join(IMAGES, 'screenshot-light.png'))
 await screenshot(true, path.join(IMAGES, 'screenshot-dark.png'))
 // Narrower shot for the cover, so the document fills the card.
 const tmpShot = path.join(os.tmpdir(), `adoc-cover-${process.pid}.png`)
-const light = await screenshot(false, tmpShot, { width: 1000, height: 820 })
+const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
 
 // --- Icon (256×256) --------------------------------------------------------------------------------
 {
@@ -60,23 +62,33 @@ const light = await screenshot(false, tmpShot, { width: 1000, height: 820 })
 }
 
 // --- Cover (1600×1000) -----------------------------------------------------------------------------
+// Orca shows the cover as a wide banner, cropped to roughly the middle third (y ≈ 330–670), so all
+// content sits in that band; the rest is background.
 {
   const shot = fs.readFileSync(light).toString('base64')
   fs.rmSync(light)
+  const icon = fs.readFileSync(path.join(IMAGES, 'icon.png')).toString('base64')
   const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } })
-  await page.setContent(`<body style="margin:0;width:1600px;height:1000px;overflow:hidden;
-    background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 55%,#5b21b6 100%);font-family:-apple-system,Helvetica,Arial,sans-serif;color:#fff">
-  <div style="position:absolute;left:96px;top:130px;width:560px">
-    <div style="font-size:30px;opacity:.75;letter-spacing:.04em">Orca plugin</div>
-    <div style="font-size:76px;font-weight:800;line-height:1.05;margin-top:18px">AsciiDoc<br>Preview</div>
-    <div style="font-size:34px;margin-top:28px;line-height:1.35;opacity:.92">PlantUML &amp; Mermaid diagrams, rendered live and fully offline.</div>
-    <div style="margin-top:44px;display:flex;gap:14px;flex-wrap:wrap;font-size:24px">
-      ${['C4', 'ArchiMate', 'Icons', 'Mermaid', 'No server'].map((t) => `<span style="padding:8px 18px;border-radius:999px;background:rgba(255,255,255,.14)">${t}</span>`).join('')}
+  await page.setContent(`<body style="margin:0;width:1600px;height:1000px;overflow:hidden;position:relative;
+    background:radial-gradient(1200px 600px at 75% 50%,rgba(124,58,237,.45),transparent 70%),linear-gradient(135deg,#0b1224 0%,#1e3a8a 60%,#4c1d95 100%);
+    font-family:-apple-system,Helvetica,Arial,sans-serif;color:#fff">
+  <div style="position:absolute;left:90px;top:360px;width:700px;height:280px;display:flex;flex-direction:column;justify-content:center">
+    <div style="display:flex;align-items:center;gap:22px">
+      <img src="data:image/png;base64,${icon}" style="width:84px;height:84px">
+      <div style="font-size:66px;font-weight:800;line-height:1">AsciiDoc Preview</div>
+    </div>
+    <div style="font-size:30px;margin-top:26px;line-height:1.3;opacity:.92">PlantUML &amp; Mermaid diagrams, live and fully offline</div>
+    <div style="margin-top:28px;display:flex;gap:12px;font-size:22px">
+      ${['C4', 'ArchiMate', 'Icons', 'Mermaid', 'No server'].map((t) => `<span style="padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.15)">${t}</span>`).join('')}
     </div>
   </div>
-  <img src="data:image/png;base64,${shot}" style="position:absolute;left:740px;top:90px;width:800px;border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.45)">
+  <div style="position:absolute;left:860px;top:345px;width:660px;height:310px;overflow:hidden;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.5)">
+    <img src="data:image/png;base64,${shot}" style="position:absolute;left:-170px;top:-245px;width:900px">
+  </div>
 </body>`)
   await page.screenshot({ path: path.join(IMAGES, 'cover.png') })
+  // What Orca's banner shows: the middle band.
+  await page.screenshot({ path: path.join(os.tmpdir(), 'adoc-cover-band.png'), clip: { x: 0, y: 330, width: 1600, height: 340 } })
   await page.close()
 }
 
