@@ -25,7 +25,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, including inli
   - Uses the **Smetana layout only**. Do **not** bundle `viz-global.js`: its wasm init fails under the CSP and then breaks graph diagrams instead of falling back to Smetana
   - Stdlib bundles **C4, kubernetes, k8s, azure, archimate, eip, DomainStory, office, logos and tupadr3** are embedded. They are served lazily via `PLANTUML_STDLIB_LOADER` (decoded only when a diagram includes them). `gcp`, `elastic` and `edgy` are excluded because they declare no license; AWS (`awslib14`, 4.7 MB gzip) does not fit
   - Any other stdlib produces a clear "library not bundled" error
-- **Mermaid:** 11.x, inlined
+- **Mermaid:** 12.x, embedded compressed
 - **Diagram errors:** an error box with the message and the diagram source in its place; the rest of the document still renders
 - **Theme:**
   - The document follows Orca's theme via the `--orca-*` CSS vars and `orca.on('theme')`

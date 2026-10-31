@@ -34,7 +34,7 @@ Architecture docs often live in AsciiDoc, as in arc42 or docs-as-code, with diag
   - **kubernetes** and **k8s**
   - **eip**
   - **DomainStory**
-- Mermaid 11: flowcharts, sequence, state, class, ER, Gantt, mindmaps and more.
+- Mermaid 12: flowcharts, sequence, state, class, ER, Gantt, mindmaps and more.
 - Follows Orca's light and dark theme.
 - Wide diagrams scale to fit the page.
 - A broken diagram shows an error box with its source. The rest of the document still renders.
