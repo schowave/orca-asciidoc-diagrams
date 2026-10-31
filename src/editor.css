@@ -16,13 +16,19 @@ a { color: var(--accent); }
 code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
 pre { background: var(--code-bg); padding: 12px 14px; border-radius: 6px; overflow-x: auto; }
 :not(pre) > code { background: var(--code-bg); padding: .1em .35em; border-radius: 4px; }
-table { border-collapse: collapse; } th, td { border: 1px solid var(--border); padding: 4px 8px; }
+table { border-collapse: collapse; } th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; vertical-align: top; }
+table.stretch { width: 100%; }
+.halign-left { text-align: left; } .halign-center { text-align: center; } .halign-right { text-align: right; }
+.valign-top { vertical-align: top; } .valign-middle { vertical-align: middle; } .valign-bottom { vertical-align: bottom; }
+td.tableblock > p { margin: 0; }
 .title { color: var(--muted); font-style: italic; margin: .4em 0; }
 .admonitionblock td.icon { font-weight: 600; vertical-align: top; border: none; }
 .admonitionblock td.content { border: none; border-left: 3px solid var(--accent); }
 .diagramblock { margin: 1em 0; }
 .diagram { overflow-x: auto; }
-.diagram svg { max-width: none; height: auto; }
+/* Fit wide diagrams to the column, like IntelliJ / Asciidoctor. PlantUML and mermaid set pixel sizes
+   in inline styles, hence !important; the viewBox keeps the aspect ratio. */
+.diagram svg { max-width: 100% !important; height: auto !important; }
 .diagram[data-kind="plantuml"].rendered { background: #ffffff; border-radius: 6px; padding: 8px; display: inline-block; max-width: 100%; box-sizing: border-box; }
 .diagram-error { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; border: 1px solid #d1242f; background: color-mix(in srgb, #d1242f 10%, var(--bg)); padding: 8px 12px; border-radius: 6px; }
 

@@ -142,7 +142,9 @@ for (const dark of [false, true]) {
       imagePlaceholders: document.querySelectorAll('.image-placeholder').length,
       nonDataImgs: Array.from(document.querySelectorAll('#content img')).filter(i => !i.src.startsWith('data:')).length,
       c4: d[0]?.classList.contains('rendered') && /Uses/.test(d[0].innerHTML) && !/not bundled|Error/i.test(d[0].textContent),
-      notBundled: (d[1]?.textContent || '') + (d[1]?.innerHTML.match(/not bundled[^<]*/)?.[0] || ''),
+      overflowing: d.filter(e => e.scrollWidth > e.clientWidth + 1).length,
+      thAlign: getComputedStyle(document.querySelector('th')).textAlign,
+      notBundled: (d[2]?.textContent || '') + (d[2]?.innerHTML.match(/not bundled[^<]*/)?.[0] || ''),
       scrollY: window.scrollY,
       violations: window.__violations,
       errors: window.__errors,
@@ -151,7 +153,7 @@ for (const dark of [false, true]) {
   console.log('features', JSON.stringify({ ...r, notBundled: r.notBundled.slice(0, 200), before }, null, 1))
   const ok = r.sidebar && r.hrefsLeft === 0 && r.externalTitle === 'https://example.com' &&
     /chapters\/intro\.adoc/.test(r.include || '') && r.imagePlaceholders === 2 && r.nonDataImgs === 0 &&
-    r.c4 && /not bundled/.test(r.notBundled) && r.scrollY > before + 100 && !r.violations.length && !r.errors.length
+    r.c4 && r.overflowing === 0 && r.thAlign === 'left' && /not bundled/.test(r.notBundled) && r.scrollY > before + 100 && !r.violations.length && !r.errors.length
   if (!ok) { failed = true; console.error('✗ features: unexpected result') } else console.log('✓ features')
   await page.close()
 }

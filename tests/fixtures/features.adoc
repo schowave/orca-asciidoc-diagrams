@@ -21,6 +21,25 @@ System(sys, "System")
 Rel(user, sys, "Uses")
 ----
 
+== Wide diagram
+
+[plantuml]
+----
+participant "A very long participant name one" as A
+participant "A very long participant name two" as B
+participant "A very long participant name three" as C
+participant "A very long participant name four" as D
+participant "A very long participant name five" as E
+participant "A very long participant name six" as F
+A -> F : a long message across the whole diagram
+----
+
+[%header,cols="1,3"]
+|===
+| Neighbour | What flows
+| A | B
+|===
+
 == Library that is not bundled
 
 [plantuml]
