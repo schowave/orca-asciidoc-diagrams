@@ -128,8 +128,9 @@ Why some PlantUML stdlib libraries are missing:
 
 Orca hosts custom editors in a sandboxed iframe. Its CSP allows only inline scripts and blocks `eval`, WebAssembly, `fetch` and workers. So the build produces **one self-contained HTML file**:
 
-- Asciidoctor.js and DOMPurify are bundled with esbuild.
-- The PlantUML engine, Mermaid and the stdlib bundles are embedded **gzip-compressed**. A library is decompressed with `DecompressionStream` only when a document first needs it.
+- Asciidoctor.js, DOMPurify and the preview code are bundled with esbuild and embedded gzip-compressed. A tiny bootstrap inflates them with the browser's `DecompressionStream`.
+- The PlantUML engine, Mermaid and the stdlib bundles are embedded **brotli-compressed**, which is about 25 % smaller than gzip. A pure-JS decoder unpacks each one only when a document first needs it.
+- The result is a single file of about 6 MiB.
 - The rendered HTML is sanitized, so a script in a foreign `.adoc` file cannot reach Orca's document API.
 
 Design decisions are in [SPEC.md](SPEC.md).
@@ -148,7 +149,7 @@ npm run media          # regenerate images/ and docs/media/demo.gif from the bui
 
 | Path | Content |
 |---|---|
-| `src/` | The preview: `editor.ts`, `payloads.ts` (compressed lazy loading), `editor.css` |
+| `src/` | The preview: `bootstrap.ts` (startup), `editor.ts`, `payloads.ts` (lazy brotli payloads), `editor.css` |
 | `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
 | `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |
 | `vendor/plantuml-stdlib/` | Vendored stdlib bundles, gzipped. The list is in `scripts/stdlib-list.mjs`; refresh with `node scripts/fetch-stdlib.mjs` |

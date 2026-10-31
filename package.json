@@ -12,6 +12,7 @@
   "dependencies": {
     "@asciidoctor/core": "4.1.1",
     "@plantuml/core": "1.2026.9",
+    "brotli": "2.1.0",
     "dompurify": "3.4.17",
     "mermaid": "12.2.0"
   },

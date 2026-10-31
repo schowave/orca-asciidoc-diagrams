@@ -95,3 +95,8 @@ The frame has no file system, no network and no wasm. As a result:
 - Entry size: 7.31 MiB for the spike, 8.29 MiB with the C4, Kubernetes and Azure stdlib bundles
 - Large scripts are embedded **gzip+base64** in inert `<script type="application/x-gzip-base64">` blocks. On first use they are decompressed with `DecompressionStream` (via `Blob`/`Response`, no fetch) and executed as inline `<script>` elements, which the CSP allows. This cut the base from ~7.3 to ~4 MiB and let tupadr3 fit. Entry: 7.27 MiB with ten stdlib libraries
 - The PlantUML engine must run in its own function scope: as a classic script its top-level names (e.g. `CSS`) shadow browser globals
+- Payload encoding:
+  - The app bundle is gzip, inflated by a tiny uncompressed bootstrap via `DecompressionStream`
+  - All other payloads are brotli (quality 11, 16 MiB window), decoded by the pure-JS `brotli` decoder (90 KB) because the frame's `DecompressionStream` has no brotli
+  - Entry size: 5.96 MiB, down from 8.19 MiB
+  - First render (headless Chromium): ~0.4 s for text only, ~0.6 s with PlantUML or Mermaid, ~0.85 s with tupadr3
