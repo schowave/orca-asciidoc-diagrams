@@ -1,0 +1,46 @@
+name: Release
+
+# Weekly, after Renovate's Monday run: refresh the PlantUML stdlib bundles, rebuild and test the
+# plugin, and cut a patch release when the build differs from the last released one.
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Mondays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # tags and history for the changelog
+      - uses: jdx/mise-action@v5
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Refresh PlantUML stdlib bundles
+        run: node scripts/fetch-stdlib.mjs
+      - name: Build and test
+        run: npm test
+      - name: Bump version and changelog
+        id: bump
+        run: echo "version=$(node scripts/release.mjs)" >> "$GITHUB_OUTPUT"
+      - name: Commit, tag and publish
+        if: steps.bump.outputs.version != ''
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add editor/index.html vendor/plantuml-stdlib orca-plugin.json package.json package-lock.json CHANGELOG.md
+          git commit -m "Release v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION"
+          git push origin HEAD:main "v$VERSION"
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file release-notes.md
