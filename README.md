@@ -76,7 +76,11 @@ Requires **Orca 1.4.245 or newer**.
 
 ### From the Orca plugin directory
 
-*Not listed yet.* Once it is listed, it can be installed from **Settings → Plugins** in Orca.
+**[Open in Orca](https://onorca.dev/plugins/schowave.asciidoc-diagrams?catalog=community)**: the link opens the plugin's page in Orca under Settings → Plugins; press **Install**. Updates install automatically.
+
+### From the Git URL
+
+Install `https://github.com/schowave/orca-asciidoc-diagrams` as a Git URL plugin in Orca. Orca installs the newest release tag. Orca marks plugins installed this way as *Unverified*, and they update only when you click **Update**.
 
 ### From source
 
