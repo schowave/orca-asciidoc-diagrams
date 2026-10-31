@@ -23,7 +23,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, including inli
 - Diagram syntax as in asciidoctor-diagram: `[plantuml]` and `[mermaid]` blocks (`----` delimited, optional title and attributes). `[source,plantuml]` and `[source,mermaid]` are shown as plain code
 - **PlantUML:** `@plantuml/core` (≥ 1.2026.6, MIT; the TeaVM JS build)
   - Uses the **Smetana layout only**. Do **not** bundle `viz-global.js`: its wasm init fails under the CSP and then breaks graph diagrams instead of falling back to Smetana
-  - Stdlib bundles **C4, Kubernetes and Azure** are inlined. They are served lazily via `PLANTUML_STDLIB_LOADER` (decoded only when a diagram includes them)
+  - Stdlib bundles **C4, kubernetes, k8s, azure, archimate, eip, DomainStory, office, logos and tupadr3** are embedded. They are served lazily via `PLANTUML_STDLIB_LOADER` (decoded only when a diagram includes them). `gcp`, `elastic` and `edgy` are excluded because they declare no license; AWS (`awslib14`, 4.7 MB gzip) does not fit
   - Any other stdlib produces a clear "library not bundled" error
 - **Mermaid:** 11.x, inlined
 - **Diagram errors:** an error box with the message and the diagram source in its place; the rest of the document still renders
@@ -93,3 +93,5 @@ The frame has no file system, no network and no wasm. As a result:
 - DOMPurify drops attributes whose value contains `-->`, so diagram sources must not travel in `data-*` attributes. They are kept in a side table, indexed by placeholder
 - Orca's frame shell cancels **every** click on `<a href>`. For internal anchors (`<<id>>`, TOC) we need our own click handler that scrolls to the target
 - Entry size: 7.31 MiB for the spike, 8.29 MiB with the C4, Kubernetes and Azure stdlib bundles
+- Large scripts are embedded **gzip+base64** in inert `<script type="application/x-gzip-base64">` blocks. On first use they are decompressed with `DecompressionStream` (via `Blob`/`Response`, no fetch) and executed as inline `<script>` elements, which the CSP allows. This cut the base from ~7.3 to ~4 MiB and let tupadr3 fit. Entry: 7.27 MiB with ten stdlib libraries
+- The PlantUML engine must run in its own function scope: as a classic script its top-level names (e.g. `CSS`) shadow browser globals

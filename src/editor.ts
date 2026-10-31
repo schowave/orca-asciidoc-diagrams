@@ -1,8 +1,9 @@
 // AsciiDoc preview frame. Runs inside Orca's sandboxed custom-editor iframe:
 // no network, no eval, no wasm, no file system. mermaid, PlantUML and the bundled PlantUML stdlib
-// libraries are inlined as globals by the build (scripts/build.mjs).
+// libraries are embedded compressed and loaded on first use (src/payloads.ts).
 import { load, Extensions } from '@asciidoctor/core'
 import DOMPurify from 'dompurify'
+import { loadPayload, payloadIds } from './payloads'
 
 declare const mermaid: any
 declare const PlantUML: {
@@ -58,27 +59,21 @@ registry.includeProcessor(function (this: any) {
 })
 
 // ---------------------------------------------------------------------------------------------
-// PlantUML stdlib: libraries are inlined as functions and only executed when a diagram includes them.
+// PlantUML stdlib: bundled libraries are decompressed and run only when a diagram includes them.
 
-const BUNDLED_STDLIB: Record<string, () => void> = w.__pumlStdlib ?? {}
+const BUNDLED_STDLIB = new Set(payloadIds().filter((id) => id.startsWith('stdlib:')).map((id) => id.slice(7)))
+const notBundledMessage = (lib: string) =>
+  `PlantUML library <${lib}> is not bundled in this preview. Bundled: ${[...BUNDLED_STDLIB].join(', ') || 'none'}.`
+
 w.PLANTUML_STDLIB_LOADER = (url: string, ok: () => void, err: (msg: string) => void) => {
   const m = /([^/]+)\.min\.js$/.exec(url)
   if (!m) return false // themes.js, emoji.js, ...: let the engine handle (or fail) them
   const lib = m[1].toLowerCase()
-  const bundle = BUNDLED_STDLIB[lib]
-  if (!bundle) {
-    err(
-      `PlantUML library <${lib}> is not bundled in this preview. ` +
-        `Bundled: ${Object.keys(BUNDLED_STDLIB).join(', ') || 'none'}.`,
-    )
+  if (!BUNDLED_STDLIB.has(lib)) {
+    err(notBundledMessage(lib))
     return true
   }
-  try {
-    bundle()
-    ok()
-  } catch (e) {
-    err(String(e))
-  }
+  loadPayload(`stdlib:${lib}`).then(ok, (e) => err(String(e)))
   return true
 }
 
@@ -95,20 +90,14 @@ const isDark = () => document.documentElement.classList.contains('dark')
 // PlantUML's generic "cannot include" diagram.
 function unbundledStdlib(src: string): string | undefined {
   for (const m of src.matchAll(/^\s*!include(?:_many|_once)?\s+<([^/>]+)/gim)) {
-    if (!BUNDLED_STDLIB[m[1].toLowerCase()]) return m[1]
+    if (!BUNDLED_STDLIB.has(m[1].toLowerCase())) return m[1]
   }
 }
 
-function renderPlantUml(src: string): Promise<string> {
+async function renderPlantUml(src: string): Promise<string> {
   const missing = unbundledStdlib(src)
-  if (missing) {
-    return Promise.reject(
-      new Error(
-        `PlantUML library <${missing}> is not bundled in this preview. ` +
-          `Bundled: ${Object.keys(BUNDLED_STDLIB).join(', ') || 'none'}.`,
-      ),
-    )
-  }
+  if (missing) return Promise.reject(new Error(notBundledMessage(missing)))
+  await loadPayload('plantuml')
   const text = /^\s*@start/.test(src) ? src : `@startuml\n${src}\n@enduml`
   return new Promise((resolve, reject) =>
     PlantUML.renderToString(text.split('\n'), resolve, (msg) => reject(new Error(msg))),
@@ -116,6 +105,7 @@ function renderPlantUml(src: string): Promise<string> {
 }
 
 async function renderMermaid(src: string): Promise<string> {
+  await loadPayload('mermaid')
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',

@@ -44,8 +44,17 @@ A -> F : a long message across the whole diagram
 
 [plantuml]
 ----
-!include <tupadr3/font-awesome/server>
+!include <awslib14/AWSCommon>
 Alice -> Bob
+----
+
+== tupadr3 icons
+
+[plantuml]
+----
+!include <tupadr3/common>
+!include <tupadr3/font-awesome/server>
+FA_SERVER(srv, "Web Server")
 ----
 
 == Filler

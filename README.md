@@ -26,8 +26,14 @@ An [Orca](https://github.com/stablyai/orca) plugin that renders AsciiDoc files (
   `@startuml` / `@enduml` are optional. `[source,plantuml]` is shown as plain code.
 - **PlantUML** uses the official JS engine with the built-in Smetana layout. Bundled standard libraries:
   - `C4` (`!include <C4/C4_Context>`, …)
-  - `kubernetes`
+  - `archimate`
+  - `tupadr3` (Font Awesome, Devicons, Material, … icons)
+  - `logos`
+  - `office`
   - `azure`
+  - `kubernetes` and `k8s`
+  - `eip`
+  - `DomainStory`
 - **Mermaid** 11
 - **Theme:**
   - The document follows Orca's light/dark theme, and so do Mermaid diagrams
@@ -45,7 +51,7 @@ The preview runs in Orca's sandboxed frame: no file system, no network, no WebAs
 | `include::` | A placeholder naming the file |
 | Relative or remote images | A placeholder with alt text and path. `data:` images work |
 | PlantUML `!include` of local files | Not supported |
-| PlantUML stdlib other than C4/kubernetes/azure (e.g. `tupadr3`, AWS) | Error box: "not bundled" |
+| PlantUML stdlib not listed above (e.g. AWS `awslib14`, `gcp`, `elastic`) | Error box: "not bundled". AWS is too large; `gcp`, `elastic` and `edgy` have no declared license |
 | External links, `xref:` to other files | Shown with their target as a tooltip; clicking does nothing |
 | Raw HTML (`++++` passthrough) | Rendered, with scripts and event handlers removed |
 | Layout | Graphviz is not available, so PlantUML uses Smetana; complex graphs may lay out differently from `dot` |
@@ -74,9 +80,9 @@ Requires Orca ≥ 1.4.245.
 | Path | Content |
 |---|---|
 | `src/editor.ts`, `src/editor.css` | The preview frame |
-| `scripts/build.mjs` | Builds `dist/plugin`: the manifest plus a single, fully inlined `editor/index.html` (the frame CSP only allows inline code). The build fails if the file exceeds 9.5 MiB, below Orca's 10 MiB limit |
+| `scripts/build.mjs` | Builds `dist/plugin`: the manifest plus a single, fully inlined `editor/index.html` (the frame CSP only allows inline code). The PlantUML engine, Mermaid and the stdlib bundles are embedded gzip-compressed and only decompressed (`DecompressionStream`) when a document needs them; see `src/payloads.ts`. The build fails if the file exceeds 9.5 MiB, below Orca's 10 MiB limit |
 | `tests/sandbox-harness.mjs` | `npm test` builds the plugin and renders the fixtures in headless Chromium inside an iframe that reproduces Orca's frame: same sandbox, same CSP, mocked `window.orca`. It fails on CSP violations, errors and missing diagrams |
-| `vendor/plantuml-stdlib/` | The vendored stdlib bundles. Refresh them with `node scripts/fetch-stdlib.mjs` |
+| `vendor/plantuml-stdlib/` | The vendored stdlib bundles, gzipped. The list is in `scripts/stdlib-list.mjs`; refresh with `node scripts/fetch-stdlib.mjs` |
 
 See [SPEC.md](SPEC.md) for design decisions.
 
