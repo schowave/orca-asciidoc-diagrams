@@ -2,7 +2,7 @@
 // (everything inlined, because the frame's CSP allows only inline scripts and styles).
 import fs from 'node:fs'
 import path from 'node:path'
-import zlib from 'node:zlib'
+import { gzipSync } from 'fflate'
 import { fileURLToPath } from 'node:url'
 import * as esbuild from 'esbuild'
 import { STDLIB } from './stdlib-list.mjs'
@@ -24,7 +24,9 @@ const plantumlClassic = plantumlJs.replace(exportStmt, 'globalThis.PlantUML={ren
 // Payloads: large classic scripts stored gzip+base64 in inert <script type="application/x-gzip-base64">
 // blocks. The frame decompresses one with DecompressionStream and runs it as an inline <script> only
 // when a document needs it (src/payloads.ts). This keeps the single entry HTML under Orca's 10 MiB.
-const gzip = (text) => zlib.gzipSync(Buffer.from(text, 'utf8'), { level: 9 })
+// fflate (pure JS) instead of node:zlib: Node's zlib output differs between platforms, and CI checks
+// that the committed editor/index.html is byte-identical to a fresh build.
+const gzip = (text) => Buffer.from(gzipSync(Buffer.from(text, 'utf8'), { level: 9, mtime: 0 }))
 const payloads = {
   // The engine is an ES module with many short top-level names (e.g. `CSS`, which would shadow
   // window.CSS). Run it in its own function scope, as a module would; it exports via globalThis.PlantUML.

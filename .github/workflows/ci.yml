@@ -22,4 +22,14 @@ jobs:
       - name: Build and test in a replica of Orca's sandboxed frame
         run: npm test
       - name: Committed editor/index.html matches the sources
-        run: git diff --exit-code -- editor/index.html
+        run: |
+          git diff --quiet -- editor/index.html && exit 0
+          echo "editor/index.html differs from a fresh build. Differing <script> blocks:"
+          git show HEAD:editor/index.html > /tmp/committed.html
+          node -e '
+            const fs = require("fs"), crypto = require("crypto");
+            const blocks = (f) => [...fs.readFileSync(f, "utf8").matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)]
+              .map((m) => [m[1].trim() || "(app)", crypto.createHash("sha256").update(m[2]).digest("hex").slice(0, 12)]);
+            const a = blocks("/tmp/committed.html"), b = blocks("editor/index.html");
+            a.forEach(([k, h], i) => { if (!b[i] || b[i][1] !== h) console.log(k, h, "->", b[i] && b[i][1]) });'
+          exit 1
