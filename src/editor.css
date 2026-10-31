@@ -26,9 +26,10 @@ td.tableblock > p { margin: 0; }
 .admonitionblock td.content { border: none; border-left: 3px solid var(--accent); }
 .diagramblock { margin: 1em 0; }
 .diagram { overflow-x: auto; }
-/* Fit wide diagrams to the column, like IntelliJ / Asciidoctor. PlantUML and mermaid set pixel sizes
-   in inline styles, hence !important; the viewBox keeps the aspect ratio. */
-.diagram svg { max-width: 100% !important; height: auto !important; }
+/* Fit wide diagrams to the column, like IntelliJ / Asciidoctor, but never scale small ones up.
+   PlantUML sets a pixel width/height inline: max-width shrinks it, height must be forced to auto.
+   Mermaid sets width="100%" plus an inline max-width of its natural size, which must stay in force. */
+.diagram svg { max-width: 100%; height: auto !important; }
 .diagram[data-kind="plantuml"].rendered { background: #ffffff; border-radius: 6px; padding: 8px; display: inline-block; max-width: 100%; box-sizing: border-box; }
 .diagram-error { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; border: 1px solid #d1242f; background: color-mix(in srgb, #d1242f 10%, var(--bg)); padding: 8px 12px; border-radius: 6px; }
 

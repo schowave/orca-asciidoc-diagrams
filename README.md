@@ -1,91 +1,149 @@
+<div align="center">
+
+<img src="images/icon.png" width="96" height="96" alt="">
+
 # AsciiDoc Preview – PlantUML & Mermaid
 
-An [Orca](https://github.com/stablyai/orca) plugin that renders AsciiDoc files (`.adoc`, `.asciidoc`, `.asc`) with inline **PlantUML** and **Mermaid** diagrams. Everything runs locally, inside Orca's plugin sandbox. No diagram source ever leaves your machine: there is no PlantUML server, no Kroki and no Java.
+**Live AsciiDoc preview for [Orca](https://github.com/stablyai/orca), with PlantUML and Mermaid diagrams, rendered fully offline.**
+
+[![CI](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml/badge.svg)](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Orca ≥ 1.4.245](https://img.shields.io/badge/Orca-%E2%89%A5%201.4.245-7c3aed.svg)](https://github.com/stablyai/orca)
+
+<img src="docs/media/demo.gif" width="800" alt="Typing AsciiDoc with a PlantUML sequence diagram and a Mermaid state diagram; the preview updates as you type">
+
+</div>
+
+## Why
+
+Architecture docs often live in AsciiDoc, as in arc42 or docs-as-code, with diagrams inline. This plugin shows those documents in Orca the way Asciidoctor and IntelliJ do, with the diagrams rendered:
+
+- **No server, no Java, no Kroki.** PlantUML and Mermaid run inside Orca's plugin sandbox, so your diagram sources never leave your machine.
+- **Same syntax as [asciidoctor-diagram](https://docs.asciidoctor.org/diagram-extension/latest/).** Files keep rendering in Asciidoctor, IntelliJ and GitLab.
+- **Live.** The preview follows your edits, including unsaved ones.
 
 ## Features
 
-- **Preview** view for AsciiDoc files, the default for these files. Switch to **Source** in the editor tab to edit
-- The preview updates live while you type, including unsaved changes
-- **AsciiDoc rendering** by [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js) 4: sections, tables, admonitions, lists and so on
-- **Diagram blocks** in [asciidoctor-diagram](https://docs.asciidoctor.org/diagram-extension/latest/) syntax, so the same files also render in Asciidoctor, IntelliJ or GitLab:
+- Opens `.adoc`, `.asciidoc` and `.asc` files in a **Preview** view. Toggle to **Source** in the editor tab to edit.
+- [Asciidoctor.js](https://github.com/asciidoctor/asciidoctor.js) 4 renders the document: sections, tables, admonitions, lists, source blocks and more.
+- PlantUML with the official JS engine and these bundled standard libraries:
+  - **C4** and **ArchiMate**
+  - **tupadr3**: Font Awesome, Devicons, Material and more
+  - **logos** and **office**
+  - **azure**
+  - **kubernetes** and **k8s**
+  - **eip**
+  - **DomainStory**
+- Mermaid 11: flowcharts, sequence, state, class, ER, Gantt, mindmaps and more.
+- Follows Orca's light and dark theme.
+- Wide diagrams scale to fit the page.
+- A broken diagram shows an error box with its source. The rest of the document still renders.
+- `:toc:` renders a table of contents. `:toc: left` and `:toc: right` render it as a sticky sidebar. In-document links scroll to their target.
 
-  ```asciidoc
-  .Login flow
-  [plantuml]
-  ----
-  Alice -> Bob : Hello
-  ----
+## Usage
 
-  [mermaid]
-  ----
-  graph LR
-    A --> B
-  ----
-  ```
+Write diagram blocks the asciidoctor-diagram way:
 
-  `@startuml` / `@enduml` are optional. `[source,plantuml]` is shown as plain code.
-- **PlantUML** uses the official JS engine with the built-in Smetana layout. Bundled standard libraries:
-  - `C4` (`!include <C4/C4_Context>`, …)
-  - `archimate`
-  - `tupadr3` (Font Awesome, Devicons, Material, … icons)
-  - `logos`
-  - `office`
-  - `azure`
-  - `kubernetes` and `k8s`
-  - `eip`
-  - `DomainStory`
-- **Mermaid** 11
-- **Theme:**
-  - The document follows Orca's light/dark theme, and so do Mermaid diagrams
-  - PlantUML diagrams sit on a light surface
-- A **broken diagram** shows an error box with the diagram source. The rest of the document still renders
-- **Table of contents** with `:toc:`. `:toc: left` / `:toc: right` render it as a sticky sidebar
-- In-document links (`<<section>>`, the TOC) scroll to their target
+```asciidoc
+.System context
+[plantuml]
+----
+!include <C4/C4_Context>
+Person(customer, "Customer")
+System(shop, "Online Shop")
+Rel(customer, shop, "Orders")
+----
 
-## Limitations
+[mermaid]
+----
+stateDiagram-v2
+  [*] --> Placed
+  Placed --> Shipped
+----
+```
 
-The preview runs in Orca's sandboxed frame: no file system, no network, no WebAssembly. As a result:
+- `@startuml` / `@enduml` are optional.
+- `[source,plantuml]` is shown as code, not rendered.
 
-| What | Behavior |
-|---|---|
-| `include::` | A placeholder naming the file |
-| Relative or remote images | A placeholder with alt text and path. `data:` images work |
-| PlantUML `!include` of local files | Not supported |
-| PlantUML stdlib not listed above (e.g. AWS `awslib14`, `gcp`, `elastic`) | Error box: "not bundled". AWS is too large; `gcp`, `elastic` and `edgy` have no declared license |
-| External links, `xref:` to other files | Shown with their target as a tooltip; clicking does nothing |
-| Raw HTML (`++++` passthrough) | Rendered, with scripts and event handlers removed |
-| Layout | Graphviz is not available, so PlantUML uses Smetana; complex graphs may lay out differently from `dot` |
+<table><tr>
+<td><img src="images/screenshot-light.png" alt="Architecture document with C4, sequence and Mermaid diagrams in a light theme"></td>
+<td><img src="images/screenshot-dark.png" alt="The same document in a dark theme"></td>
+</tr></table>
 
-## Install
+## Installation
 
-The plugin is not in the Orca catalog yet. To use it now:
+Requires **Orca 1.4.245 or newer**.
+
+### From the Orca plugin directory
+
+*Not listed yet.* Once it is listed, it can be installed from **Settings → Plugins** in Orca.
+
+### From source
 
 ```sh
 git clone https://github.com/schowave/orca-asciidoc-diagrams
 cd orca-asciidoc-diagrams
 npm ci
-npm run build        # → dist/plugin
+npm run build          # writes editor/index.html and mirrors the plugin to dist/plugin
 ```
 
 Then, in Orca:
 
 1. Settings → Plugins → **Turn on plugins**
 2. **Development folders…** → add `dist/plugin`
-3. Enable it, and open any `.adoc` file
+3. Enable the plugin and open an `.adoc` file
 
-Requires Orca ≥ 1.4.245.
+> Orca may not pick up a rebuild while a document is open. Reopen the tab, or remove and re-add the folder.
+
+## Limitations
+
+The preview runs in Orca's sandboxed plugin frame, which has no file system, no network and no WebAssembly. That causes these limitations:
+
+| What | Behavior |
+|---|---|
+| `include::` | Shown as a placeholder naming the file |
+| Relative or remote images | Shown as a placeholder with alt text and path. `data:` images work |
+| PlantUML `!include` of local files | Not supported |
+| Other PlantUML stdlib libraries | An error box says the library is not bundled |
+| External links, `xref:` to other files | The target is shown as a tooltip, but they are not clickable |
+| Raw HTML (`++++` passthrough) | Rendered, with scripts and event handlers removed |
+| PlantUML layout | Uses Smetana, because Graphviz is unavailable. Complex graphs can lay out differently from `dot` |
+
+Why some PlantUML stdlib libraries are missing:
+
+- **AWS** (`awslib14`) is too large for Orca's 10 MiB plugin page limit.
+- **gcp**, **elastic** and **edgy** declare no license, so they are not redistributed.
+
+## How it works
+
+Orca hosts custom editors in a sandboxed iframe. Its CSP allows only inline scripts and blocks `eval`, WebAssembly, `fetch` and workers. So the build produces **one self-contained HTML file**:
+
+- Asciidoctor.js and DOMPurify are bundled with esbuild.
+- The PlantUML engine, Mermaid and the stdlib bundles are embedded **gzip-compressed**. A library is decompressed with `DecompressionStream` only when a document first needs it.
+- The rendered HTML is sanitized, so a script in a foreign `.adoc` file cannot reach Orca's document API.
+
+Design decisions are in [SPEC.md](SPEC.md).
 
 ## Development
 
+```sh
+npm ci
+npm test               # build + render the fixtures in headless Chromium inside a replica of Orca's frame
+npm run media          # regenerate images/ and docs/media/demo.gif from the build
+```
+
 | Path | Content |
 |---|---|
-| `src/editor.ts`, `src/editor.css` | The preview frame |
-| `scripts/build.mjs` | Builds `dist/plugin`: the manifest plus a single, fully inlined `editor/index.html` (the frame CSP only allows inline code). The PlantUML engine, Mermaid and the stdlib bundles are embedded gzip-compressed and only decompressed (`DecompressionStream`) when a document needs them; see `src/payloads.ts`. The build fails if the file exceeds 9.5 MiB, below Orca's 10 MiB limit |
-| `tests/sandbox-harness.mjs` | `npm test` builds the plugin and renders the fixtures in headless Chromium inside an iframe that reproduces Orca's frame: same sandbox, same CSP, mocked `window.orca`. It fails on CSP violations, errors and missing diagrams |
-| `vendor/plantuml-stdlib/` | The vendored stdlib bundles, gzipped. The list is in `scripts/stdlib-list.mjs`; refresh with `node scripts/fetch-stdlib.mjs` |
+| `src/` | The preview: `editor.ts`, `payloads.ts` (compressed lazy loading), `editor.css` |
+| `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
+| `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |
+| `vendor/plantuml-stdlib/` | Vendored stdlib bundles, gzipped. The list is in `scripts/stdlib-list.mjs`; refresh with `node scripts/fetch-stdlib.mjs` |
+| `orca-plugin.json`, `editor/`, `images/` | The plugin as Orca installs it. `editor/index.html` is committed build output; CI checks that it matches the sources |
 
-See [SPEC.md](SPEC.md) for design decisions.
+Contributions are welcome. Please run `npm test` and commit the rebuilt `editor/index.html` with your change.
 
 ## License
 
-MIT. Bundled third-party components are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+[MIT](LICENSE) © David Schowalter. Bundled third-party components and their licenses are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+This is a community plugin. It is not affiliated with Orca or Stably.

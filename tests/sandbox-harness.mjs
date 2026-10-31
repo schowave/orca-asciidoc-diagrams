@@ -5,63 +5,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
+import { shell as orcaShell } from './orca-frame.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, 'test-results')
 fs.mkdirSync(OUT, { recursive: true })
 
-// Copied from Orca src/shared/plugins/frames/plugin-panel-shell.ts (PLUGIN_PANEL_CSP).
-const CSP =
-  "default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; " +
-  "style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
-
 const sample = fs.readFileSync(path.join(ROOT, 'tests/fixtures/sample.adoc'), 'utf8')
-const pluginHtml = fs.readFileSync(path.join(ROOT, 'dist/plugin/editor/index.html'), 'utf8')
-
-const mockOrca = (text, dark) => `<script>
-window.__violations = [];
-document.addEventListener('securitypolicyviolation', e => __violations.push(e.violatedDirective + ' ' + (e.blockedURI || '')));
-window.__errors = [];
-window.addEventListener('error', e => __errors.push(String(e.message)));
-window.addEventListener('unhandledrejection', e => __errors.push('unhandled: ' + String(e.reason)));
-(function () {
-  const listeners = { change: [], theme: [] };
-  const doc = { version: 1, readOnly: false, content: { kind: 'text', text: ${JSON.stringify(text).replace(/</g, "\\u003c")} } };
-  window.__setText = (t) => { doc.version++; doc.content = { kind: 'text', text: t }; listeners.change.forEach(f => f(doc)); };
-  window.orca = Object.freeze({
-    api: { major: 1, minor: 0 },
-    host: { has: () => false, call: () => Promise.reject(new Error('not_permitted')) },
-    on: (ev, f) => { (listeners[ev] ||= []).push(f); return { dispose() {} } },
-    document: Object.freeze({
-      get: async () => doc,
-      // Like Orca: deliver the current document right away, then each change.
-      onDidChange: (f) => { listeners.change.push(f); f(doc); return { dispose() {} } },
-      applyEdit: async () => { window.__applyEditCalled = true },
-    }),
-  });
-})();
-</script>`
-
-// Subset of Orca's shell script: it cancels every click on <a href> (plugin-panel-shell.ts).
-const ORCA_SHELL_POLICY = `<script>
-window.addEventListener('click', function (event) {
-  var node = event.target
-  while (node && node !== document) {
-    if (node.nodeType === 1 && node.tagName === 'A' && node.hasAttribute('href')) {
-      event.preventDefault(); event.stopImmediatePropagation(); return
-    }
-    node = node.parentNode
-  }
-}, true)
-</script>`
-
-const shell = (dark, text = sample) =>
-  `<!doctype html>\n<html class="${dark ? 'dark' : 'light'}">\n<head>\n<meta charset="utf-8">\n` +
-  `<meta http-equiv="Content-Security-Policy" content="${CSP}">\n` +
-  `<style>:root{--orca-background:${dark ? '#1e1e1e' : '#ffffff'};--orca-foreground:${dark ? '#d4d4d4' : '#1f2328'};--orca-primary:#3b82f6}</style>\n` +
-  mockOrca(text, dark) + ORCA_SHELL_POLICY +
-  `</head>\n` +
-  pluginHtml
+const shell = (dark, text = sample) => orcaShell(dark, text)
 
 const browser = await chromium.launch()
 let failed = false
@@ -142,11 +93,14 @@ for (const dark of [false, true]) {
       imagePlaceholders: document.querySelectorAll('.image-placeholder').length,
       nonDataImgs: Array.from(document.querySelectorAll('#content img')).filter(i => !i.src.startsWith('data:')).length,
       c4: d[0]?.classList.contains('rendered') && /Uses/.test(d[0].innerHTML) && !/not bundled|Error/i.test(d[0].textContent),
-      tupadr3: d[3]?.classList.contains('rendered') && /Web Server/.test(d[3].innerHTML) && !/cannot include|error/i.test(d[3].textContent),
-      tupadr3Text: (d[3]?.textContent || '').slice(0, 200),
+      tupadr3: d.at(-1)?.classList.contains('rendered') && /Web Server/.test(d.at(-1).innerHTML) && !/cannot include|error/i.test(d.at(-1).textContent),
+      tupadr3Text: (d.at(-1)?.textContent || '').slice(0, 200),
+      // Small mermaid diagrams must keep their natural size (not be scaled up to the column width).
+      mermaidUpscaled: Array.from(document.querySelectorAll('.diagram[data-kind="mermaid"] svg')).filter(svg => {
+        const natural = parseFloat(svg.style.maxWidth); return natural && svg.getBoundingClientRect().width > natural + 1 }).length,
       overflowing: d.filter(e => e.scrollWidth > e.clientWidth + 1).length,
       thAlign: getComputedStyle(document.querySelector('th')).textAlign,
-      notBundled: (d[2]?.textContent || '') + (d[2]?.innerHTML.match(/not bundled[^<]*/)?.[0] || ''),
+      notBundled: d.map(e => e.textContent).find(t => /awslib14/.test(t)) || '',
       scrollY: window.scrollY,
       violations: window.__violations,
       errors: window.__errors,
@@ -155,7 +109,7 @@ for (const dark of [false, true]) {
   console.log('features', JSON.stringify({ ...r, notBundled: r.notBundled.slice(0, 200), before }, null, 1))
   const ok = r.sidebar && r.hrefsLeft === 0 && r.externalTitle === 'https://example.com' &&
     /chapters\/intro\.adoc/.test(r.include || '') && r.imagePlaceholders === 2 && r.nonDataImgs === 0 &&
-    r.c4 && r.tupadr3 && r.overflowing === 0 && r.thAlign === 'left' && /not bundled/.test(r.notBundled) && r.scrollY > before + 100 && !r.violations.length && !r.errors.length
+    r.c4 && r.tupadr3 && r.mermaidUpscaled === 0 && r.overflowing === 0 && r.thAlign === 'left' && /not bundled/.test(r.notBundled) && r.scrollY > before + 100 && !r.violations.length && !r.errors.length
   if (!ok) { failed = true; console.error('✗ features: unexpected result') } else console.log('✓ features')
   await page.close()
 }

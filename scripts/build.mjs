@@ -1,4 +1,4 @@
-// Builds dist/plugin/: the manifest plus one self-contained editor/index.html
+// Builds editor/index.html: one self-contained page
 // (everything inlined, because the frame's CSP allows only inline scripts and styles).
 import fs from 'node:fs'
 import path from 'node:path'
@@ -74,12 +74,19 @@ ${payloadBlocks}
 ${script(app.outputFiles[0].text)}
 `
 
-// Overwrite in place, never delete OUT: Orca watches it as a development folder.
-fs.mkdirSync(path.join(OUT, 'editor'), { recursive: true })
-fs.copyFileSync(path.join(ROOT, 'plugin/orca-plugin.json'), path.join(OUT, 'orca-plugin.json'))
-fs.copyFileSync(path.join(ROOT, 'LICENSE'), path.join(OUT, 'LICENSE'))
-fs.copyFileSync(path.join(ROOT, 'THIRD_PARTY_NOTICES.md'), path.join(OUT, 'THIRD_PARTY_NOTICES.md'))
-fs.writeFileSync(path.join(OUT, 'editor/index.html'), html)
+// The plugin lives at the repository root (Orca installs from a Git commit): orca-plugin.json,
+// editor/index.html (committed build output), images/, LICENSE, THIRD_PARTY_NOTICES.md.
+fs.mkdirSync(path.join(ROOT, 'editor'), { recursive: true })
+fs.writeFileSync(path.join(ROOT, 'editor/index.html'), html)
+
+// dist/plugin mirrors only the plugin files, for Orca's "Development folders" (the repository root
+// would also contain node_modules). Overwrite in place, never delete: Orca watches the folder.
+const PLUGIN_FILES = ['orca-plugin.json', 'editor/index.html', 'LICENSE', 'THIRD_PARTY_NOTICES.md']
+const images = fs.existsSync(path.join(ROOT, 'images')) ? fs.readdirSync(path.join(ROOT, 'images')).map((f) => `images/${f}`) : []
+for (const rel of [...PLUGIN_FILES, ...images]) {
+  fs.mkdirSync(path.dirname(path.join(OUT, rel)), { recursive: true })
+  fs.copyFileSync(path.join(ROOT, rel), path.join(OUT, rel))
+}
 
 const bytes = Buffer.byteLength(html)
 console.log(`editor/index.html: ${(bytes / 1024 / 1024).toFixed(2)} MiB`)

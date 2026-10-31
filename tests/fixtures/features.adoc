@@ -40,6 +40,14 @@ A -> F : a long message across the whole diagram
 | A | B
 |===
 
+== Small mermaid diagram
+
+[mermaid]
+----
+graph LR
+  A --> B
+----
+
 == Library that is not bundled
 
 [plantuml]

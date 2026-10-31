@@ -1,12 +1,13 @@
 {
   "name": "orca-asciidoc-diagrams",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "license": "MIT",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node scripts/build.mjs && node tests/sandbox-harness.mjs"
+    "test": "node scripts/build.mjs && node tests/sandbox-harness.mjs",
+    "media": "node scripts/media.mjs"
   },
   "dependencies": {
     "@asciidoctor/core": "4.1.1",
@@ -17,5 +18,11 @@
   "devDependencies": {
     "esbuild": "0.28.2",
     "playwright": "1.64.1"
-  }
+  },
+  "description": "Orca plugin: AsciiDoc preview with inline PlantUML and Mermaid diagrams, fully offline",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/schowave/orca-asciidoc-diagrams.git"
+  },
+  "author": "David Schowalter"
 }

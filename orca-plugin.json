@@ -1,0 +1,52 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stablyai/orca/main/docs/schemas/plugins/orca-plugin.v2.schema.json",
+  "manifestVersion": 2,
+  "execution": "sandboxed-ui",
+  "id": "asciidoc-diagrams",
+  "publisher": "schowave",
+  "name": "AsciiDoc Preview – PlantUML & Mermaid",
+  "version": "1.0.0",
+  "description": "Live preview for AsciiDoc files with inline PlantUML and Mermaid diagrams (C4, ArchiMate, icons). Renders fully offline: no server, no Java.",
+  "author": {
+    "name": "David Schowalter",
+    "url": "https://github.com/schowave"
+  },
+  "repository": "https://github.com/schowave/orca-asciidoc-diagrams",
+  "homepage": "https://github.com/schowave/orca-asciidoc-diagrams",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "engines": {
+    "orca": ">=1.4.245"
+  },
+  "contributes": {
+    "customEditors": [
+      {
+        "id": "asciidoc-preview",
+        "title": "Preview",
+        "extensions": [
+          ".adoc",
+          ".asciidoc",
+          ".asc"
+        ],
+        "entry": "editor/index.html",
+        "priority": "default"
+      }
+    ]
+  },
+  "cover": {
+    "path": "images/cover.png",
+    "alt": "AsciiDoc document with a C4 context diagram rendered next to its table of contents"
+  },
+  "screenshots": [
+    {
+      "path": "images/screenshot-light.png",
+      "alt": "Architecture document with PlantUML C4, sequence and Mermaid diagrams in a light theme",
+      "caption": "PlantUML and Mermaid diagrams, rendered offline"
+    },
+    {
+      "path": "images/screenshot-dark.png",
+      "alt": "The same architecture document in a dark theme",
+      "caption": "Follows Orca's light and dark theme"
+    }
+  ]
+}
