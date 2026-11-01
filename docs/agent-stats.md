@@ -5,9 +5,9 @@ Agent commits carry the trailer `Assisted-by: Claude Code` (see `AGENTS.md`). Re
 
 | Measure | Value |
 |---|---|
-| Commits | 20 |
-| Agent commits | 0 |
-| Agent share of commits | 0.0 % |
+| Commits | 23 |
+| Agent commits | 3 |
+| Agent share of commits | 13.0 % |
 | Reverts | 0 |
 | Revert rate, all commits | 0.0 % |
-| Revert rate, agent commits | n/a (0 reverts) |
+| Revert rate, agent commits | 0.0 % (0 reverts) |

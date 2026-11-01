@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1
+
+- Rename to "AsciiDoc Preview – Diagrams, Code & Math"; cover lists all formats
+- Add agent harness: checks, unit tests, agent guide, context docs
+- Format with Prettier
+- CHANGELOG: correct the 1.1.0 entry
+- fetch-stdlib: rewrite a bundle only when its content changed
+
 ## 1.1.0
 
 - Graphviz: `[graphviz]` blocks, with `layout=` (dot, neato, circo, …)
