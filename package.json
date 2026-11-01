@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node scripts/build.mjs && node tests/sandbox-harness.mjs",
-    "test:unit": "node --test --experimental-test-coverage --test-coverage-include='src/text.ts' --test-coverage-include='scripts/*.mjs' --test-coverage-lines=90 tests/unit/*.test.ts",
+    "test:unit": "node --test --experimental-test-coverage --test-coverage-include='src/text.ts' --test-coverage-include='src/base122.ts' --test-coverage-include='scripts/*.mjs' --test-coverage-lines=90 tests/unit/*.test.ts",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
     "lint": "eslint .",

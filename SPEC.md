@@ -123,7 +123,7 @@ The frame has no file system, no network and no wasm.
 
 - **`editor/index.html`:** one self-contained file of about **7 MiB**. Its contents:
   - Inline CSS and `<div id="content">`
-  - Inert `<script type="application/x-payload" data-payload="…">` blocks holding base64-encoded, compressed code
+  - Inert `<script type="application/x-payload" data-payload="…" data-length="…">` blocks holding compressed code, encoded as base-122 text (`src/base122.ts`): about 14 % overhead instead of base64's 33 %. The variant avoids NUL, CR and `<`, which the HTML parser would change or which could end the script element
   - The only uncompressed script, `src/bootstrap.ts`
 - **Startup:**
   - The bootstrap inflates the **`app`** payload (gzip) natively and runs it
@@ -152,6 +152,7 @@ The frame has no file system, no network and no wasm.
   - 8.19 MiB after gzip, with ten libraries
   - 5.96 MiB after brotli
   - 6.96 MiB with Graphviz, highlight.js and KaTeX
+  - 5.97 MiB with base-122 instead of base64 (in-browser load about 25 ms slower)
 - **Tests:** `tests/sandbox-harness.mjs` runs headless Chromium in a replica of Orca's frame (`tests/orca-frame.mjs`):
   - The replica has the same srcdoc, sandbox, CSP and link-click policy as Orca, and a mocked `window.orca` that delivers on subscribe like Orca
   - The run fails on:

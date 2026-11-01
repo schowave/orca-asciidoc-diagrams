@@ -96,7 +96,13 @@ In Orca:
 
 1. Settings → Plugins → install a plugin
 2. Choose **Git URL**
-3. Enter the repository URL with a release tag, for example `https://github.com/schowave/orca-asciidoc-diagrams#v1.0.0`. The newest tag is on the [releases page](https://github.com/schowave/orca-asciidoc-diagrams/releases)
+3. Paste the URL of the newest release:
+
+   ```text
+   https://github.com/schowave/orca-asciidoc-diagrams#v1.1.1
+   ```
+
+   The release workflow updates this URL with every release. Older versions are on the [releases page](https://github.com/schowave/orca-asciidoc-diagrams/releases)
 
 Orca marks plugins installed this way as *Unverified*, and they update only when you click **Update**.
 
@@ -146,7 +152,7 @@ node scripts/fetch-stdlib.mjs           # vendors the selected libraries
 npm run build                           # dist/plugin now contains your selection
 ```
 
-Then load `dist/plugin` as a development folder, as described in [From source](#from-source). The names are the folder names in [plantuml-stdlib](https://github.com/plantuml/plantuml-stdlib/tree/master/stdlib). The build fails if the page grows beyond 9.5 MiB: Orca's limit is 10 MiB, and the default build is about 7 MiB. AWS alone adds about 3 MiB.
+Then load `dist/plugin` as a development folder, as described in [From source](#from-source). The names are the folder names in [plantuml-stdlib](https://github.com/plantuml/plantuml-stdlib/tree/master/stdlib). The build fails if the page grows beyond 9.5 MiB: Orca's limit is 10 MiB, and the default build is about 6 MiB. AWS alone adds about 2.7 MiB.
 
 ## How it works
 
@@ -154,7 +160,7 @@ Orca hosts custom editors in a sandboxed iframe. Its CSP allows only inline scri
 
 - Asciidoctor.js, DOMPurify and the preview code are bundled with esbuild and embedded gzip-compressed. A tiny bootstrap inflates them with the browser's `DecompressionStream`.
 - The PlantUML engine, Mermaid, Graphviz, highlight.js, KaTeX with its fonts, and the stdlib bundles are embedded **brotli-compressed**, which is about 25 % smaller than gzip. A pure-JS decoder unpacks each one only when a document first needs it.
-- The result is a single file of about 7 MiB.
+- Everything is stored as base-122 text, which adds about 14 % (base64 would add 33 %). The result is a single file of about 6 MiB.
 - The rendered HTML is sanitized, so a script in a foreign `.adoc` file cannot reach Orca's document API.
 
 Design decisions are in [SPEC.md](SPEC.md).

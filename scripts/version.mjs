@@ -5,3 +5,7 @@ export function nextVersion(current, bump = 'patch') {
   if (bump === 'minor') return `${major}.${minor + 1}.0`
   return `${major}.${minor}.${patch + 1}`
 }
+
+// The README's Git URL install line, pointed at a new release tag.
+export const withInstallUrlVersion = (readme, version) =>
+  readme.replace(/(github\.com\/schowave\/orca-asciidoc-diagrams#v)\d+\.\d+\.\d+/g, `$1${version}`)

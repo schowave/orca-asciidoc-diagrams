@@ -7,6 +7,7 @@ import { gzipSync } from 'fflate'
 import { fileURLToPath } from 'node:url'
 import * as esbuild from 'esbuild'
 import { selectedStdlib } from './stdlib-list.mjs'
+import { encode } from '../src/base122.ts'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, 'dist/plugin')
@@ -22,7 +23,7 @@ const exportStmt = /export\{(\w+) as render,(\w+) as renderToString\};?\s*$/
 if (!exportStmt.test(plantumlJs)) throw new Error('Unexpected @plantuml/core export footer; update build.mjs')
 const plantumlClassic = plantumlJs.replace(exportStmt, 'globalThis.PlantUML={render:$1,renderToString:$2};')
 
-// Payloads: classic scripts stored compressed + base64 in inert <script type="application/x-payload">
+// Payloads: classic scripts stored compressed + base-122 (src/base122.ts) in inert <script type="application/x-payload">
 // blocks and only run when needed, which keeps the single entry HTML well under Orca's 10 MiB:
 // - "app" (asciidoctor, DOMPurify, the preview, the brotli decoder) is gzip, because the browser can
 //   inflate gzip natively; src/bootstrap.ts does that at startup.
@@ -62,8 +63,9 @@ for (const lib of STDLIB) {
   }
   payloads[`stdlib:${lib}`] = brotli(zlib.gunzipSync(fs.readFileSync(file)))
 }
+// base-122 text needs about 14 % more than the bytes (base64: 33 %); the byte length goes along for decoding.
 const payloadBlock = (id, buf) =>
-  `<script type="application/x-payload" data-payload="${id}">${buf.toString('base64')}</script>`
+  `<script type="application/x-payload" data-payload="${id}" data-length="${buf.length}">${encode(buf)}</script>`
 
 // asciidoctor's browser build still has guarded `import('node:…')` calls (fs, path). Left external,
 // they trigger a CSP script-src violation in the frame. Resolve them to a module that throws on load,
@@ -157,7 +159,7 @@ for (const rel of [...PLUGIN_FILES, ...images]) {
 const bytes = Buffer.byteLength(html)
 console.log(`editor/index.html: ${(bytes / 1024 / 1024).toFixed(2)} MiB`)
 for (const [id, buf] of Object.entries({ app, ...payloads }))
-  console.log(`  ${id}: ${((buf.length * 4) / 3 / 1024).toFixed(0)} KiB`)
+  console.log(`  ${id}: ${(Buffer.byteLength(encode(buf)) / 1024).toFixed(0)} KiB`)
 if (bytes > MAX_ENTRY_BYTES) {
   console.error(`Entry exceeds ${MAX_ENTRY_BYTES} bytes`)
   process.exit(1)

@@ -8,7 +8,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { nextVersion } from './version.mjs'
+import { nextVersion, withInstallUrlVersion } from './version.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim()
@@ -64,6 +64,8 @@ const lines = [
   ...(stdlib.length ? [`- Update PlantUML stdlib bundles: ${stdlib.join(', ')}`] : []),
 ]
 const entry = `## ${version}\n\n${lines.length ? lines.join('\n') : '- Rebuild'}\n\n`
+const readme = path.join(ROOT, 'README.md')
+fs.writeFileSync(readme, withInstallUrlVersion(fs.readFileSync(readme, 'utf8'), version))
 const changelog = fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8')
 fs.writeFileSync(path.join(ROOT, 'CHANGELOG.md'), changelog.replace(/^(# Changelog\n\n)/, `$1${entry}`))
 fs.writeFileSync(path.join(ROOT, 'release-notes.md'), lines.join('\n') || '- Rebuild')
