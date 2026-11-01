@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2
+
+- Shrink the plugin by 1 MiB with base-122 payloads; README shows the newest install URL
+- CHANGELOG: user-facing notes for 1.1.1
+
 ## 1.1.1
 
 - New name: **AsciiDoc Preview – Diagrams, Code & Math**. The plugin id is unchanged, so existing installs update normally
