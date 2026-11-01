@@ -2,9 +2,9 @@
 
 ## 1.1.3
 
-- Rename to "AsciiDoc Preview – PlantUML, Mermaid & Graphviz"
-- Stop committing the PlantUML stdlib bundles; pin them by SHA-256
-- CHANGELOG: user-facing notes for 1.1.2
+- New name: **AsciiDoc Preview – PlantUML, Mermaid & Graphviz**. The plugin id is unchanged, so existing installs update normally
+- Smaller install (about 3 MiB less): the PlantUML library sources are no longer part of the plugin. The preview itself is unchanged
+- Meets the Orca plugin directory's rules: no archive files in the plugin
 
 ## 1.1.2
 
