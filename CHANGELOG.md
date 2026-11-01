@@ -2,9 +2,12 @@
 
 ## 1.1.0
 
-- mise tasks for development; demo and spec cover the new formats
-- Add Graphviz, syntax highlighting, math, and custom stdlib selection
-- Update PlantUML stdlib bundles: archimate, azure, c4, domainstory, eip, k8s, kubernetes, logos, office, tupadr3
+- Graphviz: `[graphviz]` blocks, with `layout=` (dot, neato, circo, …)
+- Syntax highlighting for source blocks (highlight.js, light and dark themes)
+- Math with `:stem:`: latexmath and asciimath, inline and as blocks (KaTeX)
+- Custom PlantUML stdlib selection for your own builds: `PLANTUML_STDLIB=c4,awslib14`
+- Development setup with mise: `mise run setup`, `mise run test`
+- The demo document and screenshots show the new formats
 
 ## 1.0.0
 
