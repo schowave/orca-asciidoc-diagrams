@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3
+
+- Rename to "AsciiDoc Preview – PlantUML, Mermaid & Graphviz"
+- Stop committing the PlantUML stdlib bundles; pin them by SHA-256
+- CHANGELOG: user-facing notes for 1.1.2
+
 ## 1.1.2
 
 - About 1 MiB smaller (5.97 MiB instead of 6.96 MiB): the embedded libraries use a more compact text encoding

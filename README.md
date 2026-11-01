@@ -99,7 +99,7 @@ In Orca:
 3. Paste the URL of the newest release:
 
    ```text
-   https://github.com/schowave/orca-asciidoc-diagrams#v1.1.2
+   https://github.com/schowave/orca-asciidoc-diagrams#v1.1.3
    ```
 
    The release workflow updates this URL with every release. Older versions are on the [releases page](https://github.com/schowave/orca-asciidoc-diagrams/releases)
