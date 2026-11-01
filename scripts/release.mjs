@@ -8,6 +8,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { changedLibs } from './stdlib-lock.mjs'
 import { nextVersion, withInstallUrlVersion } from './version.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -25,7 +26,7 @@ if (!lastTag) {
 // it differs from the last tag: committed by hand since then, or rebuilt/refetched in this run.
 const PLUGIN_PATHS = [
   'editor/index.html',
-  'vendor/plantuml-stdlib',
+  'vendor/plantuml-stdlib.lock.json',
   'images',
   'orca-plugin.json',
   'LICENSE',
@@ -55,10 +56,15 @@ for (const f of ['package.json', 'package-lock.json']) {
 const commits = git('log', '--no-merges', '--format=%s', `${lastTag}..HEAD`)
   .split('\n')
   .filter((s) => s && !s.startsWith('Release '))
-const stdlib = git('status', '--porcelain', '--', 'vendor/plantuml-stdlib')
-  .split('\n')
-  .filter(Boolean)
-  .map((l) => path.basename(l.slice(3), '.min.js.gz'))
+const LOCK = 'vendor/plantuml-stdlib.lock.json'
+const lockAt = (ref) => {
+  try {
+    return JSON.parse(git('show', `${ref}:${LOCK}`))
+  } catch {
+    return {} // not committed yet at that ref
+  }
+}
+const stdlib = changedLibs(lockAt('HEAD'), readJson(LOCK))
 const lines = [
   ...commits.map((s) => `- ${s}`),
   ...(stdlib.length ? [`- Update PlantUML stdlib bundles: ${stdlib.join(', ')}`] : []),

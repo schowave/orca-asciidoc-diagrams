@@ -12,6 +12,7 @@ run = [
   "mise install",
   "npm ci",
   "npx playwright install chromium",
+  "node scripts/fetch-stdlib.mjs",
   "lefthook install",
 ]
 
@@ -36,5 +37,5 @@ description = "Regenerate images/ and docs/media/demo.gif from the build"
 run = "npm run media"
 
 [tasks.fetch-stdlib]
-description = "Vendor the PlantUML stdlib bundles (PLANTUML_STDLIB=a,b for a custom selection)"
+description = "Download the PlantUML stdlib bundles, checked against the lock (--update pins new upstream; PLANTUML_STDLIB=a,b for a custom selection)"
 run = "node scripts/fetch-stdlib.mjs"

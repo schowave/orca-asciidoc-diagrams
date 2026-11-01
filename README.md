@@ -148,7 +148,7 @@ You can build the plugin with exactly the PlantUML stdlib libraries you need, fo
 
 ```sh
 export PLANTUML_STDLIB=c4,awslib14      # stdlib folder names, lower-case
-node scripts/fetch-stdlib.mjs           # vendors the selected libraries
+node scripts/fetch-stdlib.mjs           # downloads the selected libraries
 npm run build                           # dist/plugin now contains your selection
 ```
 
@@ -185,7 +185,7 @@ mise tasks             # list all tasks
 | `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
 | `tests/unit/` | Unit tests (`*.test.ts`, run by `node --test`) for the pure helpers in `src/text.ts` and `scripts/` |
 | `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |
-| `vendor/plantuml-stdlib/` | Vendored stdlib bundles, gzipped. The list is in `scripts/stdlib-list.mjs`; refresh with `node scripts/fetch-stdlib.mjs` |
+| `vendor/plantuml-stdlib.lock.json` | SHA-256 of each bundled PlantUML stdlib library. The libraries themselves are not committed, because the Orca catalog refuses archives. `mise run fetch-stdlib` downloads them into the gitignored `vendor/plantuml-stdlib/`, and `--update` pins new upstream versions; the release workflow does that weekly. The list is in `scripts/stdlib-list.mjs` |
 | `orca-plugin.json`, `editor/`, `images/` | The plugin as Orca installs it. `editor/index.html` is committed build output; the release workflow rebuilds and commits it |
 
 Contributions are welcome. Please run `mise run check` and `mise run test`. Leave `editor/index.html` alone: the weekly release workflow rebuilds it. Rules for coding agents are in [AGENTS.md](AGENTS.md).

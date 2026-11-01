@@ -54,6 +54,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
     - `gcp`, `elastic`, `edgy`: no declared license
     - `awslib14`: about 3 MiB, too large for the default build
   - **Custom builds:** `PLANTUML_STDLIB=a,b` overrides `scripts/stdlib-list.mjs` for `fetch-stdlib.mjs` and `build.mjs`
+  - **Not committed:** the catalog rejects archives (v1.1.0 was refused for the vendored `.gz` files). `fetch-stdlib.mjs` downloads the libraries into the gitignored `vendor/plantuml-stdlib/`. `vendor/plantuml-stdlib.lock.json` pins their SHA-256; on a mismatch the script warns, and `--update` pins the new upstream version. The release workflow runs it with `--update` and releases when the lock changes
 - **Syntax highlighting:**
   - highlight.js with its common languages, applied to `pre.highlight > code[data-lang]`
   - Asciidoctor runs with `source-highlighter=highlight.js`

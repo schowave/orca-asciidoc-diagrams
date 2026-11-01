@@ -50,18 +50,19 @@ const payloads = {
   ),
   mermaid: brotli(utf8(nm('mermaid/dist/mermaid.min.js'))),
 }
-// PlantUML stdlib bundles, vendored gzip-compressed (scripts/fetch-stdlib.mjs). Each one is an IIFE
+// PlantUML stdlib bundles, downloaded by scripts/fetch-stdlib.mjs into the gitignored vendor cache and
+// pinned in vendor/plantuml-stdlib.lock.json. Each one is an IIFE
 // that registers its files on window.PLANTUML_STDLIB.
 for (const lib of STDLIB) {
-  const file = path.join(ROOT, 'vendor/plantuml-stdlib', `${lib}.min.js.gz`)
+  const file = path.join(ROOT, 'vendor/plantuml-stdlib', `${lib}.min.js`)
   if (!fs.existsSync(file)) {
     console.error(
-      `PlantUML stdlib "${lib}" is not vendored. Fetch it first with the same selection:\n` +
-        `  PLANTUML_STDLIB=${STDLIB.join(',')} node scripts/fetch-stdlib.mjs`,
+      `PlantUML stdlib "${lib}" is not downloaded yet. Fetch it with the same selection:\n` +
+        `  PLANTUML_STDLIB=${STDLIB.join(',')} node scripts/fetch-stdlib.mjs   (or: mise run fetch-stdlib)`,
     )
     process.exit(1)
   }
-  payloads[`stdlib:${lib}`] = brotli(zlib.gunzipSync(fs.readFileSync(file)))
+  payloads[`stdlib:${lib}`] = brotli(fs.readFileSync(file))
 }
 // base-122 text needs about 14 % more than the bytes (base64: 33 %); the byte length goes along for decoding.
 const payloadBlock = (id, buf) =>

@@ -31,7 +31,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Refresh PlantUML stdlib bundles
-        run: node scripts/fetch-stdlib.mjs
+        run: node scripts/fetch-stdlib.mjs --update
       - name: Build and test
         run: npm test
       - name: Bump version and changelog
@@ -50,7 +50,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add editor/index.html vendor/plantuml-stdlib images orca-plugin.json package.json package-lock.json CHANGELOG.md README.md docs/agent-stats.md
+          git add editor/index.html vendor/plantuml-stdlib.lock.json images orca-plugin.json package.json package-lock.json CHANGELOG.md README.md docs/agent-stats.md
           git commit -m "Release v$VERSION"
           git tag -a "v$VERSION" -m "v$VERSION"
           git push origin HEAD:main "v$VERSION"

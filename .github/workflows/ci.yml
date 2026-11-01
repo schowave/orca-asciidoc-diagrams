@@ -17,6 +17,8 @@ jobs:
       - uses: jdx/mise-action@v5
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # The PlantUML stdlib bundles are not committed; download them (checked against the lock).
+      - run: node scripts/fetch-stdlib.mjs
       # The same command as locally: format, lint, types, TODO rule, unit tests.
       - name: Fast checks
         run: npm run check

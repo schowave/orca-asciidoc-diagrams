@@ -20,7 +20,7 @@ _Avoid_: chunk, lazy module
 The only uncompressed script in the entry (`src/bootstrap.ts`). It inflates the gzip-compressed app payload and runs it.
 
 **Stdlib bundle**:
-One PlantUML standard library (for example `c4`, `azure`) vendored gzipped in `vendor/plantuml-stdlib/` and embedded as a payload. The list is in `scripts/stdlib-list.mjs`.
+One PlantUML standard library (for example `c4`, `azure`) downloaded by `scripts/fetch-stdlib.mjs`, pinned by SHA-256 in `vendor/plantuml-stdlib.lock.json` and embedded as a payload. The list is in `scripts/stdlib-list.mjs`.
 _Avoid_: library pack, include set
 
 **Not bundled**:

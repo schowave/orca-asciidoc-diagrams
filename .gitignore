@@ -11,3 +11,6 @@ coverage/
 *.log
 .idea/
 .vscode/
+
+# PlantUML stdlib download cache (pinned by vendor/plantuml-stdlib.lock.json)
+vendor/plantuml-stdlib/
