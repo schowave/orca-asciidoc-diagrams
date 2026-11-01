@@ -4,6 +4,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
+import { gzipSync } from 'fflate'
 import { fileURLToPath } from 'node:url'
 import { selectedStdlib } from './stdlib-list.mjs'
 
@@ -15,6 +16,13 @@ for (const lib of selectedStdlib()) {
   const res = await fetch(`${BASE}${lib}.min.js`)
   if (!res.ok) throw new Error(`${lib}: HTTP ${res.status}`)
   const js = Buffer.from(await res.arrayBuffer())
-  fs.writeFileSync(path.join(DIR, `${lib}.min.js.gz`), zlib.gzipSync(js, { level: 9 }))
+  const file = path.join(DIR, `${lib}.min.js.gz`)
+  // Only rewrite when the library itself changed: gzip bytes differ between zlib builds, and the
+  // release workflow treats any change under vendor/ as a reason to release.
+  if (fs.existsSync(file) && zlib.gunzipSync(fs.readFileSync(file)).equals(js)) {
+    console.log(`unchanged ${lib}`)
+    continue
+  }
+  fs.writeFileSync(file, Buffer.from(gzipSync(js, { level: 9, mtime: 0 })))
   console.log(`updated ${lib}.min.js.gz (${(js.length / 1024).toFixed(0)} KiB raw)`)
 }
