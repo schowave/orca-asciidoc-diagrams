@@ -79,9 +79,9 @@ const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
       <img src="data:image/png;base64,${icon}" style="width:84px;height:84px">
       <div style="font-size:66px;font-weight:800;line-height:1">AsciiDoc Preview</div>
     </div>
-    <div style="font-size:30px;margin-top:26px;line-height:1.3;opacity:.92">PlantUML &amp; Mermaid diagrams, live and fully offline</div>
+    <div style="font-size:30px;margin-top:26px;line-height:1.3;opacity:.92">Diagrams, code and math, live and fully offline</div>
     <div style="margin-top:28px;display:flex;gap:12px;font-size:22px">
-      ${['C4', 'ArchiMate', 'Icons', 'Mermaid', 'No server'].map((t) => `<span style="padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.15)">${t}</span>`).join('')}
+      ${['PlantUML', 'Mermaid', 'Graphviz', 'Code', 'Math', 'Offline'].map((t) => `<span style="padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.15)">${t}</span>`).join('')}
     </div>
   </div>
   <div style="position:absolute;left:860px;top:345px;width:660px;height:310px;overflow:hidden;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.5)">

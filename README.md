@@ -2,7 +2,7 @@
 
 <img src="images/icon.png" width="96" height="96" alt="">
 
-# AsciiDoc Preview – PlantUML & Mermaid
+# AsciiDoc Preview – Diagrams, Code & Math
 
 **Live AsciiDoc preview for [Orca](https://github.com/stablyai/orca), with PlantUML and Mermaid diagrams, rendered fully offline.**
 

@@ -1,4 +1,4 @@
-# Spec: AsciiDoc Preview – PlantUML & Mermaid (Orca plugin)
+# Spec: AsciiDoc Preview – Diagrams, Code & Math (Orca plugin)
 
 ## Goal
 
@@ -7,7 +7,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
 ## Identity & distribution
 
 - **Plugin:**
-  - Name: **AsciiDoc Preview – PlantUML & Mermaid**
+  - Name: **AsciiDoc Preview – Diagrams, Code & Math**
   - id `asciidoc-diagrams`; publisher `schowave`, the repository owner
   - Install key `schowave.asciidoc-diagrams`
 - **Repository:** MIT license, public `github.com/schowave/orca-asciidoc-diagrams`, GitHub topic `orca-plugin`

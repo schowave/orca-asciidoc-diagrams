@@ -4,7 +4,7 @@
   "execution": "sandboxed-ui",
   "id": "asciidoc-diagrams",
   "publisher": "schowave",
-  "name": "AsciiDoc Preview – PlantUML & Mermaid",
+  "name": "AsciiDoc Preview – Diagrams, Code & Math",
   "version": "1.1.0",
   "description": "Live preview for AsciiDoc files with inline PlantUML, Mermaid and Graphviz diagrams, highlighted code and math. Renders fully offline: no server, no Java.",
   "author": {
