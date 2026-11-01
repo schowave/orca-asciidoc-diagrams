@@ -25,17 +25,19 @@ async function waitRendered(frame) {
 // --- Screenshots (1280×800 CSS px at 2×, i.e. 2560×1600; light and dark) ----------------------------
 // Orca's minimum screenshot size is 1280×800; using it as the CSS viewport keeps text readable in the
 // listing's thumbnails, and the 2× pixel ratio keeps it sharp.
-async function screenshot(dark, file, viewport = { width: 1280, height: 800 }, deviceScaleFactor = 2) {
+async function screenshot(dark, file, viewport = { width: 1280, height: 800 }, deviceScaleFactor = 2, scrollTo) {
   const page = await browser.newPage({ viewport, deviceScaleFactor })
   await page.setContent(hostPage(dark, demo))
   const frame = page.frames()[1]
   await waitRendered(frame)
+  if (scrollTo) await frame.evaluate((id) => document.getElementById(id).scrollIntoView(), scrollTo)
   await page.screenshot({ path: file })
   await page.close()
   return file
 }
 await screenshot(false, path.join(IMAGES, 'screenshot-light.png'))
-await screenshot(true, path.join(IMAGES, 'screenshot-dark.png'))
+// The dark shot shows the second half of the demo: Graphviz, highlighted code and math.
+await screenshot(true, path.join(IMAGES, 'screenshot-dark.png'), undefined, 2, '_order_pipeline')
 // Narrower shot for the cover, so the document fills the card.
 const tmpShot = path.join(os.tmpdir(), `adoc-cover-${process.pid}.png`)
 const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)

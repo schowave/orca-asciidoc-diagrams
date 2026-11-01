@@ -1,5 +1,6 @@
 = Online Shop – Architecture Overview
 :toc: left
+:stem: latexmath
 
 The shop lets customers browse products, place orders and track deliveries.
 
@@ -45,6 +46,43 @@ stateDiagram-v2
   Placed --> Cancelled
   Delivered --> [*]
 ----
+
+== Order pipeline
+
+.Events between services (Graphviz)
+[graphviz]
+----
+digraph {
+  rankdir=LR
+  node [shape=box, style="rounded,filled", fillcolor="#e0e7ff", fontname="Helvetica"]
+  Checkout -> "order.placed" -> Billing -> "payment.captured" -> Fulfilment
+  "order.placed" [shape=ellipse, fillcolor="#fef3c7"]
+  "payment.captured" [shape=ellipse, fillcolor="#fef3c7"]
+}
+----
+
+== API
+
+[source,typescript]
+----
+export async function placeOrder(cart: Cart): Promise<Order> {
+  const order = await orders.create({ items: cart.items, total: cart.total })
+  await events.publish('order.placed', { id: order.id })
+  return order
+}
+----
+
+== Capacity
+
+The shop must handle stem:[\lambda = 120] orders per minute at peak.
+With an average service time stem:[S], one instance reaches utilization
+
+[stem]
+++++
+\rho = \frac{\lambda \cdot S}{c}
+++++
+
+where stem:[c] is the number of instances, so we keep stem:[\rho < 0.7].
 
 == Deployment
 

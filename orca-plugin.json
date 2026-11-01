@@ -6,7 +6,7 @@
   "publisher": "schowave",
   "name": "AsciiDoc Preview – PlantUML & Mermaid",
   "version": "1.0.0",
-  "description": "Live preview for AsciiDoc files with inline PlantUML and Mermaid diagrams (C4, ArchiMate, icons). Renders fully offline: no server, no Java.",
+  "description": "Live preview for AsciiDoc files with inline PlantUML, Mermaid and Graphviz diagrams, highlighted code and math. Renders fully offline: no server, no Java.",
   "author": {
     "name": "David Schowalter",
     "url": "https://github.com/schowave"
@@ -45,8 +45,8 @@
     },
     {
       "path": "images/screenshot-dark.png",
-      "alt": "The same architecture document in a dark theme",
-      "caption": "Follows Orca's light and dark theme"
+      "alt": "Dark theme: a Graphviz event diagram, highlighted TypeScript and a KaTeX formula",
+      "caption": "Graphviz, syntax highlighting and math, in Orca's dark theme"
     }
   ]
 }

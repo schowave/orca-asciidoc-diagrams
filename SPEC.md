@@ -2,111 +2,207 @@
 
 ## Goal
 
-An Orca plugin that renders AsciiDoc files as easily as possible, including inline PlantUML and Mermaid diagrams, fully offline.
+An Orca plugin that renders AsciiDoc files as easily as possible, with inline diagrams (PlantUML, Mermaid, Graphviz), highlighted code and math. It works fully offline: no server, no Java, and no diagram source leaves the machine.
 
 ## Identity & distribution
 
-- Name: **AsciiDoc Preview – PlantUML & Mermaid**, id `asciidoc-diagrams`, publisher `schowave`
-- License: MIT. Public GitHub repo with topic `orca-plugin`; later an Orca catalog entry
-- `manifestVersion: 2`, `execution: "sandboxed-ui"`, `pluginApi: 1`, `engines.orca: ">=1.4.245"` (custom editors exist since 1.4.245; keep `publisher` in the manifest)
-- Independent of the existing `Mbirepinte/Orca-asciidoc-viewer`, which has no diagram support
+- **Plugin:**
+  - Name: **AsciiDoc Preview – PlantUML & Mermaid**
+  - id `asciidoc-diagrams`; publisher `schowave`, the repository owner
+  - Install key `schowave.asciidoc-diagrams`
+- **Repository:** MIT license, public `github.com/schowave/orca-asciidoc-diagrams`, GitHub topic `orca-plugin`
+- **Manifest:**
+  - `manifestVersion: 2`, `execution: "sandboxed-ui"`, `engines.orca: ">=1.4.245"`, because custom editors exist since 1.4.245
+  - Keep `publisher` while supporting 1.4.245; it can be omitted only from `>=1.4.246`
+- **Layout:** the plugin lives at the repository root, because Orca installs from a Git commit:
+  - `orca-plugin.json`
+  - `editor/index.html`: committed build output
+  - `images/`, `LICENSE`, `THIRD_PARTY_NOTICES.md`
+  - `dist/plugin` mirrors only these files, for Orca's development folders
+- **Distribution:**
+  - **Community catalog / onorca.dev:** it is generated automatically from the topic plus the newest `vX.Y.Z` tag, pinned to that commit and its content hash. There is no PR. Orca auto-updates a release once it has been listed for 12 h. A size review may hold large plugins.
+  - **Git URL install:** `https://github.com/schowave/orca-asciidoc-diagrams#vX.Y.Z`. Orca requires an explicit `#ref` (a tag or a commit); such installs are shown as *Unverified*.
+- **Relation to `Mbirepinte/Orca-asciidoc-viewer`:** independent of it. That plugin has no diagram support; diagrams are the distinguishing feature here.
 
-## Scope (v1)
+## Features
 
-- `contributes.customEditors` for `.adoc`, `.asciidoc` and `.asc`, with `priority: "default"` and `contentKind: "text"`
-- **Read-only view.** Editing happens in Orca's Source view (view toggle). The plugin never calls `orca.document.applyEdit`
-- Live re-render on `orca.document.onDidChange` (works on unsaved changes too):
-  - Debounce of about 250 ms
+- **Opening files:**
+  - `contributes.customEditors` for `.adoc`, `.asciidoc` and `.asc`
+  - `priority: "default"`, `contentKind: "text"`
+- **Read-only:**
+  - Editing happens in Orca's Source view (view toggle)
+  - The plugin never calls `orca.document.applyEdit`
+- **Live updates:** `orca.document.onDidChange` triggers a re-render, including on unsaved changes
+  - Debounced by about 250 ms
+  - Versions already rendered are skipped
   - The scroll position is preserved
-  - Rendered diagrams are cached by source hash
-- AsciiDoc rendering with **asciidoctor.js 4.x**
-- Diagram syntax as in asciidoctor-diagram: `[plantuml]` and `[mermaid]` blocks (`----` delimited, optional title and attributes). `[source,plantuml]` and `[source,mermaid]` are shown as plain code
-- **PlantUML:** `@plantuml/core` (≥ 1.2026.6, MIT; the TeaVM JS build)
-  - Uses the **Smetana layout only**. Do **not** bundle `viz-global.js`: its wasm init fails under the CSP and then breaks graph diagrams instead of falling back to Smetana
-  - Stdlib bundles **C4, kubernetes, k8s, azure, archimate, eip, DomainStory, office, logos and tupadr3** are embedded. They are served lazily via `PLANTUML_STDLIB_LOADER` (decoded only when a diagram includes them). `gcp`, `elastic` and `edgy` are excluded because they declare no license; AWS (`awslib14`, 4.7 MB gzip) does not fit
-  - Any other stdlib produces a clear "library not bundled" error
-- **Mermaid:** 12.x, embedded compressed
-- **Diagram errors:** an error box with the message and the diagram source in its place; the rest of the document still renders
+  - Diagrams are cached by source; failures are cached too
+- **AsciiDoc:** asciidoctor.js 4 in `safe: secure` mode
+- **Diagrams:** asciidoctor-diagram block syntax, `----` delimited, with optional title and attributes. `[source,<lang>]` stays code.
+  - `[plantuml]`:
+    - Rendered by `@plantuml/core` (≥ 1.2026.6, MIT, TeaVM JS build), with the **Smetana layout only**
+    - `@startuml`/`@enduml` are optional
+  - `[mermaid]`: Mermaid 12, `securityLevel: 'strict'`, `suppressErrorRendering: true`
+  - `[graphviz]`:
+    - viz.js 2.1.2: Graphviz 2.40.1 compiled to asm.js, so no wasm is needed
+    - Optional `layout=` (`dot`, `neato`, `fdp`, `sfdp`, `twopi`, `circo`, `osage`, `patchwork`)
+- **PlantUML stdlib:**
+  - Bundled: C4, kubernetes, k8s, azure, archimate, eip, DomainStory, office, logos, tupadr3
+  - Loaded lazily via `PLANTUML_STDLIB_LOADER`
+  - Others produce a clear "library not bundled" error
+  - Excluded:
+    - `gcp`, `elastic`, `edgy`: no declared license
+    - `awslib14`: about 3 MiB, too large for the default build
+  - **Custom builds:** `PLANTUML_STDLIB=a,b` overrides `scripts/stdlib-list.mjs` for `fetch-stdlib.mjs` and `build.mjs`
+- **Syntax highlighting:**
+  - highlight.js with its common languages, applied to `pre.highlight > code[data-lang]`
+  - Asciidoctor runs with `source-highlighter=highlight.js`
+  - GitHub light and dark themes, scoped to `html.dark`
+- **Math (`:stem:`):**
+  - KaTeX, with its woff2 fonts inlined as `data:` URIs
+  - asciimath goes through asciimath2tex first
+  - Delimiters as Asciidoctor emits them: `\$…\$` (asciimath), `\(…\)` and `\[…\]` (latexmath)
+  - Inside `.stemblock` the output is display mode
+- **Diagram errors:** an error box (monospace, line breaks kept) followed by the source. The rest of the document still renders.
 - **Theme:**
-  - The document follows Orca's theme via the `--orca-*` CSS vars and `orca.on('theme')`
-  - Mermaid uses `dark` or `default` to match
-  - PlantUML stays light on its own light surface
-- **TOC:** only when the document sets `:toc:`. With `toc: left` it is a sticky sidebar; otherwise it stays inline
+  - The document follows Orca's theme (`--orca-*` vars, `orca.on('theme')`), and Mermaid follows with `dark`/`default`
+  - PlantUML and Graphviz sit on a light card
+- **Layout:**
+  - Wide diagrams scale down to the column width; small ones are never scaled up
+  - Table cells are left-aligned and respect the `halign-*`/`valign-*` classes
+- **TOC:** only with `:toc:`. `toc: left`/`right` renders a sticky sidebar, which stacks on narrow widths.
 - **Links:**
-  - Internal anchors work
-  - External links and `xref:` to other files are displayed with their target in a tooltip but cannot be followed (the sandbox has no popups and the host API has no open method). This is documented
-- **Wide diagrams** scroll horizontally. No zoom, fullscreen or export in v1
+  - Orca's frame shell cancels every click on `<a href>`. So `href` moves to `data-href`:
+    - Internal anchors (`<<id>>`, TOC) scroll to their target, by click or Enter
+    - External links and `xref:` to other files show their target as a tooltip only
+- **Not in scope:** zoom, fullscreen and export
 
 ## Security
 
-- Sanitize the rendered HTML with DOMPurify. Passthrough HTML is allowed; scripts and event handlers are removed. Reason: a script in a foreign `.adoc` could otherwise call `applyEdit` and modify the open file
-- The plugin never calls `applyEdit`
+- The rendered HTML is sanitized with DOMPurify. Passthrough HTML is allowed; scripts and event handlers are removed. Without this, a script in a foreign `.adoc` could call `applyEdit` and modify the open file.
+- The plugin never calls `applyEdit`.
+- Payloads are executed as inline scripts. They come only from the plugin's own build, never from the document.
 
-## Known limitations (documented in the README)
+## Known limitations
 
-The frame has no file system, no network and no wasm. As a result:
+The frame has no file system, no network and no wasm.
 
-- `include::` directives render as a visible placeholder ("include not resolvable: <path>")
-- Relative images render as a placeholder with their alt text. `data:` images and rendered diagrams work
-- PlantUML `!include` of local files is unsupported
+| What | Behaviour |
+| --- | --- |
+| `include::` | A visible placeholder ("Include not resolvable in the preview: <path>"), via an include processor |
+| Images | Anything that is not a `data:` URI becomes a placeholder showing the alt text and path |
+| PlantUML `!include` of local files | Unsupported |
+| Libraries | Cannot be installed at runtime: the frame has no storage, and frames of different plugins cannot talk to each other. A future Orca frame↔worker channel (stablyai/orca#36429, panels only so far) could change that |
 
-## Platform constraints (verified against Orca 1.4.245 source)
+## Platform constraints (verified against Orca 1.4.245)
 
-- The frame is `<iframe sandbox="allow-scripts">` with this CSP:
+- **Frame:** `<iframe sandbox="allow-scripts">` (srcdoc) with this CSP:
   `default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`
-- What is blocked:
+- **Blocked:**
   - `eval` and `new Function`
   - WebAssembly
   - `fetch` and Workers
   - External scripts
-- So all JS and CSS must be inlined into **one** entry HTML
-- Limits: 10 MiB for the entry HTML, 50 MiB and 2000 files for the plugin
-- Frame API:
-  - `orca.document.get()` returns `{ version, readOnly, content: { kind: 'text', text } }`
-  - `orca.document.onDidChange(cb)`
+  - `DecompressionStream('brotli')`; only gzip and deflate are available
+- **Allowed:**
+  - Inline `<script>` elements, including ones inserted at runtime
+  - `Blob`, `Response`, `DecompressionStream('gzip')`
+  - `data:` fonts and images
+- **Limits:**
+  - 10 MiB for the entry HTML
+  - 50 MiB and 2000 files for the whole plugin
+  - Listing images: icon ≥ 128 px, square, ≤ 256 KB; cover ≥ 800×500, ≤ 1 MB; screenshots ≥ 1280×800, ≤ 1.5 MB
+  - Orca shows the cover cropped to a wide banner, roughly its middle third
+- **Frame API:**
+  - `orca.document.get()`
+  - `orca.document.onDidChange(cb)`: delivers the current document right away, then each change
   - `orca.on('theme', cb)`
+  - The theme also arrives as the `light`/`dark` class on `<html>`
 
-## Tech & tests
+## Architecture
 
-- TypeScript plus esbuild produce a single inlined `editor/index.html`
-- Library versions are pinned
-- The build fails if the entry HTML exceeds **9.5 MiB** (estimate: ~8–9 MiB)
-- Inlining details for `@plantuml/core`:
-  - Replace the trailing ESM `export` with a global
-  - Escape `</script` and `<!--`
-  - Make sure the page is decoded as UTF-8
-- Playwright tests run in a harness that reproduces Orca's frame exactly (srcdoc, sandbox, CSP meta)
-- Manual check in real Orca: Settings → Plugins → Development folders
+- **`editor/index.html`:** one self-contained file of about **7 MiB**. Its contents:
+  - Inline CSS and `<div id="content">`
+  - Inert `<script type="application/x-payload" data-payload="…">` blocks holding base64-encoded, compressed code
+  - The only uncompressed script, `src/bootstrap.ts`
+- **Startup:**
+  - The bootstrap inflates the **`app`** payload (gzip) natively and runs it
+  - `app` contains asciidoctor.js, DOMPurify, the preview code and the brotli decoder
+- **On demand (`src/payloads.ts`):** every other payload is **brotli** (quality 11, 16 MiB window), decoded by the pure-JS `brotli` decoder (90 KB) and run once. It is about 25 % smaller than gzip. The payloads:
+  - `plantuml`: the engine plus `themes.js`, run in its own function scope
+  - `mermaid`
+  - `graphviz`
+  - `hljs`
+  - `katex`: KaTeX with its fonts, plus asciimath2tex
+  - `stdlib:<lib>`, one per PlantUML stdlib library
+- **First render** (headless Chromium, including page setup):
+  - ~0.4 s for text only
+  - ~0.6 s with PlantUML or Mermaid
+  - ~0.85 s with tupadr3
 
-## Plan
+## Tech, tests and maintenance
 
-1. **Spike:** a minimal custom editor in real Orca 1.4.245 that renders one PlantUML and one Mermaid block inside an `.adoc`. This is the main risk, because so far it is only verified in headless Chrome
-2. Full v1 per this spec
-3. README, test suite and release; then the catalog
+- **Build:**
+  - TypeScript and esbuild
+  - fflate for gzip, because `node:zlib` gzip differs between platforms
+  - Node's brotli for the other payloads
+- **Size guard:** the build fails above **9.5 MiB**. Size history:
+  - 7.31 MiB for the spike
+  - 8.29 MiB with three stdlib libraries
+  - 8.19 MiB after gzip, with ten libraries
+  - 5.96 MiB after brotli
+  - 6.96 MiB with Graphviz, highlight.js and KaTeX
+- **Tests:** `tests/sandbox-harness.mjs` runs headless Chromium in a replica of Orca's frame (`tests/orca-frame.mjs`):
+  - The replica has the same srcdoc, sandbox, CSP and link-click policy as Orca, and a mocked `window.orca` that delivers on subscribe like Orca
+  - The run fails on:
+    - CSP violations, errors, or stray elements outside `#content`
+    - Missing or wrongly failed diagrams
+    - Highlighting, math or Graphviz not rendered
+    - Overflowing or upscaled diagrams
+    - A broken link scroll
+    - A script surviving sanitization, or a call to `applyEdit`
+- **Media:** `scripts/media.mjs` generates the icon, cover, screenshots and demo GIF from the real build in the same replica frame.
+- **Tooling:**
+  - `mise.toml` pins Node and defines the tasks (`setup`, `test`, `build`, `media`, `fetch-stdlib`)
+  - `mise.lock` holds checksums for all platforms
+  - CI uses `jdx/mise-action`
+- **Dependencies:** Renovate (GitHub App) covers npm, mise and GitHub Actions
+  - Patch and minor updates automerge once CI is green
+  - Major updates wait for review
+  - The PlantUML stdlib bundles come from plantuml.github.io and are not in npm; the release workflow refreshes them
+- **Releases:** `.github/workflows/release.yml` runs weekly on Mondays, or by dispatch with `patch`/`minor`/`major`:
+  1. Refresh the stdlib bundles
+  2. Build and test
+  3. If the build differs from the committed one (or on a dispatched minor/major), bump the version and changelog, commit, tag and create a GitHub release
+  - `editor/index.html` on `main` is therefore the last *released* build. CI tests the build but does not require a committed rebuild in every PR.
 
-## Implementation notes (from the spike)
+## Implementation notes
 
-- asciidoctor.js 4 is a native ESM port (no Opal) and runs under the CSP
-  - `convert()` and `reader.readLines()` are async
-  - Block processors use `reader.getLines()`
-  - Its guarded `import('node:…')` calls are resolved to a throwing stub at build time; left external, they cause CSP violations
-- DOMPurify drops attributes whose value contains `-->`, so diagram sources must not travel in `data-*` attributes. They are kept in a side table, indexed by placeholder
-- Orca's frame shell cancels **every** click on `<a href>`. For internal anchors (`<<id>>`, TOC) we need our own click handler that scrolls to the target
-- Entry size: 7.31 MiB for the spike, 8.29 MiB with the C4, Kubernetes and Azure stdlib bundles
-- Large scripts are embedded **gzip+base64** in inert `<script type="application/x-gzip-base64">` blocks. On first use they are decompressed with `DecompressionStream` (via `Blob`/`Response`, no fetch) and executed as inline `<script>` elements, which the CSP allows. This cut the base from ~7.3 to ~4 MiB and let tupadr3 fit. Entry: 7.27 MiB with ten stdlib libraries
-- The PlantUML engine must run in its own function scope: as a classic script its top-level names (e.g. `CSS`) shadow browser globals
-- Payload encoding:
-  - The app bundle is gzip, inflated by a tiny uncompressed bootstrap via `DecompressionStream`
-  - All other payloads are brotli (quality 11, 16 MiB window), decoded by the pure-JS `brotli` decoder (90 KB) because the frame's `DecompressionStream` has no brotli
-  - Entry size: 5.96 MiB, down from 8.19 MiB
-  - First render (headless Chromium): ~0.4 s for text only, ~0.6 s with PlantUML or Mermaid, ~0.85 s with tupadr3
+- **asciidoctor.js 4:**
+  - It is a native ESM port (no Opal) and runs under the CSP
+  - `load()`/`convert()` and `reader.readLines()` are async; block processors use `reader.getLines()`
+  - Its guarded `import('node:…')` calls resolve to a throwing stub at build time; left external, they cause CSP violations
+- **DOMPurify:** it drops attributes whose value contains `-->`, so diagram sources live in a side table indexed by placeholder, not in `data-*`.
+- **The PlantUML engine:**
+  - Must run in its own function scope: as a classic script, its top-level names (for example `CSS`) shadow browser globals
+  - Do not bundle its `viz-global.js`: under the CSP its wasm init fails and breaks graph diagrams instead of falling back to Smetana
+- **Mermaid:**
+  - On parse errors it appends an error SVG to `<body>` unless `suppressErrorRendering` is set
+  - Its inline `max-width` must stay in force, or small diagrams are scaled up
+- **highlight.js themes:** strip CSS comments before scoping selectors to light/dark, or the leading rule escapes the scope.
+- **Orca development folders:**
+  - Overwrite the build in place, never delete the folder, or Orca's watcher loses it
+  - A rebuild may still need a reinstall and reopening the tab
 
-## Additional renderers (after 1.0.0)
+## Decisions
 
-Each renderer is its own brotli payload and loads on first use:
-
-- **Syntax highlighting:** highlight.js (common languages, GitHub light and dark themes scoped to `html.dark`), applied to `pre.highlight > code[data-lang]`. Asciidoctor runs with `source-highlighter=highlight.js`.
-- **Math (`:stem:`):** KaTeX, with its woff2 fonts inlined as `data:` URIs. asciimath goes through asciimath2tex first. Delimiters as Asciidoctor emits them: `\$…\$` (asciimath), `\(…\)` and `\[…\]` (latexmath). Inside `.stemblock` the output is display mode.
-- **Graphviz:** `[graphviz]` blocks with an optional `layout=`, rendered by viz.js 2.1.2. That is asm.js Graphviz 2.40.1, so no wasm is needed. It sits on a light card like PlantUML.
-- **Custom stdlib selection:** `PLANTUML_STDLIB=a,b` overrides `scripts/stdlib-list.mjs` for both `fetch-stdlib.mjs` and `build.mjs`.
-- **Entry size:** 6.96 MiB.
+| Topic | Decision |
+| --- | --- |
+| Scope | Read-only preview, default view for `.adoc`, published as a separate plugin rather than contributed upstream |
+| PlantUML | Engine in the browser with Smetana; no server and no Java; no Graphviz layout for PlantUML |
+| Stdlib | A broad default set (licensed libraries only); custom selection via `PLANTUML_STDLIB` for anything else, e.g. AWS |
+| Unresolvable content | `include::` and images become placeholders; no local preview server |
+| Security | Sanitize everything; never write to the document |
+| Size | Compress the embedded code (A + B); no base122 encoding, no trimming of tupadr3 |
+| Extra formats | Syntax highlighting, KaTeX math and Graphviz. WaveDrom, Nomnoml, Bytefield and BPMN only on request. D2, Svgbob, Pikchr, BlockDiag, Structurizr and Vega are impossible in the sandbox |
+| Maintenance | Renovate with automerge for patch and minor updates; weekly automatic patch releases through the community catalog |

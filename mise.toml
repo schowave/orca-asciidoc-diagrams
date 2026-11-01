@@ -1,4 +1,29 @@
-# Tool versions for local development and CI (jdx/mise-action reads this file).
-# Run `mise install` once; mise then puts these versions on PATH inside this directory.
+# Tool versions and developer tasks for local development and CI (jdx/mise-action reads this file).
+#   mise run setup   # once: Node, npm packages, headless Chromium for the tests
+#   mise run test    # build + render the fixtures in a replica of Orca's sandboxed frame
 [tools]
 node = "26.13.0"
+
+[tasks.setup]
+description = "Install everything needed to build and test the plugin"
+run = [
+  "mise install",
+  "npm ci",
+  "npx playwright install chromium",
+]
+
+[tasks.build]
+description = "Build editor/index.html and mirror the plugin to dist/plugin"
+run = "npm run build"
+
+[tasks.test]
+description = "Build and render the fixtures in headless Chromium inside a replica of Orca's frame"
+run = "npm test"
+
+[tasks.media]
+description = "Regenerate images/ and docs/media/demo.gif from the build"
+run = "npm run media"
+
+[tasks.fetch-stdlib]
+description = "Vendor the PlantUML stdlib bundles (PLANTUML_STDLIB=a,b for a custom selection)"
+run = "node scripts/fetch-stdlib.mjs"
