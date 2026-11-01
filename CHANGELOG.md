@@ -2,8 +2,8 @@
 
 ## 1.1.2
 
-- Shrink the plugin by 1 MiB with base-122 payloads; README shows the newest install URL
-- CHANGELOG: user-facing notes for 1.1.1
+- About 1 MiB smaller (5.97 MiB instead of 6.96 MiB): the embedded libraries use a more compact text encoding
+- The README shows a copyable Git URL for the newest release
 
 ## 1.1.1
 
