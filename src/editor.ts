@@ -63,7 +63,11 @@ registry.includeProcessor(function (this: any) {
 // ---------------------------------------------------------------------------------------------
 // PlantUML stdlib: bundled libraries are decompressed and run only when a diagram includes them.
 
-const BUNDLED_STDLIB = new Set(payloadIds().filter((id) => id.startsWith('stdlib:')).map((id) => id.slice(7)))
+const BUNDLED_STDLIB = new Set(
+  payloadIds()
+    .filter((id) => id.startsWith('stdlib:'))
+    .map((id) => id.slice(7)),
+)
 const notBundledMessage = (lib: string) =>
   `PlantUML library <${lib}> is not bundled in this preview. Bundled: ${[...BUNDLED_STDLIB].join(', ') || 'none'}.`
 
@@ -146,9 +150,7 @@ function renderDiagram(kind: Kind, src: string, layout?: string): Promise<string
   let p = cache.get(key)
   if (!p) {
     p =
-      kind === 'plantuml' ? renderPlantUml(src)
-      : kind === 'mermaid' ? renderMermaid(src)
-      : renderGraphviz(src, layout)
+      kind === 'plantuml' ? renderPlantUml(src) : kind === 'mermaid' ? renderMermaid(src) : renderGraphviz(src, layout)
     cache.set(key, p) // failures are cached too: the same source fails the same way
     p.catch(() => {})
   }
@@ -259,9 +261,10 @@ async function renderMath(container: HTMLElement) {
     for (const m of text.matchAll(MATH)) {
       html += escapeHtml(text.slice(last, m.index))
       const [, ascii, latexInline, latexBlock] = m
-      html += ascii !== undefined
-        ? math.render(ascii, display, 'asciimath')
-        : math.render(latexInline ?? latexBlock, display || latexBlock !== undefined, 'latexmath')
+      html +=
+        ascii !== undefined
+          ? math.render(ascii, display, 'asciimath')
+          : math.render(latexInline ?? latexBlock, display || latexBlock !== undefined, 'latexmath')
       last = m.index! + m[0].length
     }
     if (!last) continue

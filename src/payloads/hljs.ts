@@ -5,11 +5,19 @@ import light from 'highlight.js/styles/github.css'
 import dark from 'highlight.js/styles/github-dark.css'
 
 const scope = (css: string, prefix: string) =>
-  css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\})\s*([^{}@]+)\{/g, (_m, close, selectors: string) =>
-    `${close}${selectors.split(',').map((s) => `${prefix} ${s.trim()}`).join(',')}{`)
+  css.replace(/\/\*[\s\S]*?\*\//g, '').replace(
+    /(^|\})\s*([^{}@]+)\{/g,
+    (_m, close, selectors: string) =>
+      `${close}${selectors
+        .split(',')
+        .map((s) => `${prefix} ${s.trim()}`)
+        .join(',')}{`,
+  )
 
 const style = document.createElement('style')
-style.textContent = scope(light, 'html:not(.dark)') + scope(dark, 'html.dark') +
+style.textContent =
+  scope(light, 'html:not(.dark)') +
+  scope(dark, 'html.dark') +
   // Keep our own code-block background; only the token colors come from the theme.
   'pre code.hljs{background:transparent!important;padding:0!important}'
 document.head.appendChild(style)

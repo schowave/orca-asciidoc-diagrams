@@ -90,7 +90,10 @@ const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
 </body>`)
   await page.screenshot({ path: path.join(IMAGES, 'cover.png') })
   // What Orca's banner shows: the middle band.
-  await page.screenshot({ path: path.join(os.tmpdir(), 'adoc-cover-band.png'), clip: { x: 0, y: 330, width: 1600, height: 340 } })
+  await page.screenshot({
+    path: path.join(os.tmpdir(), 'adoc-cover-band.png'),
+    clip: { x: 0, y: 330, width: 1600, height: 340 },
+  })
   await page.close()
 }
 
@@ -119,11 +122,13 @@ const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
   ]
   const escape = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
   const page = await browser.newPage({ viewport: { width: W, height: H } })
-  const html = hostPage(false, intro, 'position:absolute;left:520px;top:0;width:760px;height:720px;border:0')
-    .replace('<body style="margin:0">', `<body style="margin:0;background:#fff">
+  const html = hostPage(false, intro, 'position:absolute;left:520px;top:0;width:760px;height:720px;border:0').replace(
+    '<body style="margin:0">',
+    `<body style="margin:0;background:#fff">
       <pre id="src" style="position:absolute;left:0;top:0;width:520px;height:720px;margin:0;box-sizing:border-box;
         padding:28px 24px;background:#1e1e2e;color:#cdd6f4;font:15px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;
-        white-space:pre-wrap;overflow:hidden;border-right:1px solid #313244"></pre>`)
+        white-space:pre-wrap;overflow:hidden;border-right:1px solid #313244"></pre>`,
+  )
   await page.setContent(html)
   const frame = page.frames()[1]
   await waitRendered(frame)
@@ -159,13 +164,25 @@ const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
   }
   frames[frames.length - 1].seconds = 3
 
-  const list = frames.map((f) => `file '${f.file}'\nduration ${f.seconds}`).join('\n') + `\nfile '${frames.at(-1).file}'\n`
+  const list =
+    frames.map((f) => `file '${f.file}'\nduration ${f.seconds}`).join('\n') + `\nfile '${frames.at(-1).file}'\n`
   fs.writeFileSync(path.join(dir, 'frames.txt'), list)
   const gif = path.join(MEDIA, 'demo.gif')
   execFileSync('ffmpeg', [
-    '-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', path.join(dir, 'frames.txt'),
-    '-vf', 'scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
-    '-loop', '0', gif,
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'concat',
+    '-safe',
+    '0',
+    '-i',
+    path.join(dir, 'frames.txt'),
+    '-vf',
+    'scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle',
+    '-loop',
+    '0',
+    gif,
   ])
   fs.rmSync(dir, { recursive: true, force: true })
   await page.close()

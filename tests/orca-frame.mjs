@@ -13,7 +13,6 @@ const CSP =
   "default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; " +
   "style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
 
-
 const mockOrca = (text, dark) => `<script>
 window.__violations = [];
 document.addEventListener('securitypolicyviolation', e => __violations.push(e.violatedDirective + ' ' + (e.blockedURI || '')));
@@ -22,7 +21,7 @@ window.addEventListener('error', e => __errors.push(String(e.message)));
 window.addEventListener('unhandledrejection', e => __errors.push('unhandled: ' + String(e.reason)));
 (function () {
   const listeners = { change: [], theme: [] };
-  const doc = { version: 1, readOnly: false, content: { kind: 'text', text: ${JSON.stringify(text).replace(/</g, "\\u003c")} } };
+  const doc = { version: 1, readOnly: false, content: { kind: 'text', text: ${JSON.stringify(text).replace(/</g, '\\u003c')} } };
   window.__setText = (t) => { doc.version++; doc.content = { kind: 'text', text: t }; listeners.change.forEach(f => f(doc)); };
   window.orca = Object.freeze({
     api: { major: 1, minor: 0 },
@@ -55,10 +54,10 @@ export const shell = (dark, text) =>
   `<!doctype html>\n<html class="${dark ? 'dark' : 'light'}">\n<head>\n<meta charset="utf-8">\n` +
   `<meta http-equiv="Content-Security-Policy" content="${CSP}">\n` +
   `<style>:root{--orca-background:${dark ? '#1e1e1e' : '#ffffff'};--orca-foreground:${dark ? '#d4d4d4' : '#1f2328'};--orca-primary:#3b82f6}</style>\n` +
-  mockOrca(text, dark) + ORCA_SHELL_POLICY +
+  mockOrca(text, dark) +
+  ORCA_SHELL_POLICY +
   `</head>\n` +
   pluginHtml()
-
 
 /** Outer page that hosts the plugin frame like Orca does. */
 export const hostPage = (dark, text, frameStyle = 'width:100%;height:100vh;border:0') =>

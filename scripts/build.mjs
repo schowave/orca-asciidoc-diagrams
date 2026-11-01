@@ -44,7 +44,9 @@ const STDLIB = selectedStdlib()
 const payloads = {
   // The engine is an ES module with many short top-level names (e.g. `CSS`, which would shadow
   // window.CSS). Run it in its own function scope, as a module would; it exports via globalThis.PlantUML.
-  plantuml: brotli(utf8(nm('@plantuml/core/themes.js') + '\n;(function(){"use strict";\n' + plantumlClassic + '\n})();')),
+  plantuml: brotli(
+    utf8(nm('@plantuml/core/themes.js') + '\n;(function(){"use strict";\n' + plantumlClassic + '\n})();'),
+  ),
   mermaid: brotli(utf8(nm('mermaid/dist/mermaid.min.js'))),
 }
 // PlantUML stdlib bundles, vendored gzip-compressed (scripts/fetch-stdlib.mjs). Each one is an IIFE
@@ -52,13 +54,16 @@ const payloads = {
 for (const lib of STDLIB) {
   const file = path.join(ROOT, 'vendor/plantuml-stdlib', `${lib}.min.js.gz`)
   if (!fs.existsSync(file)) {
-    console.error(`PlantUML stdlib "${lib}" is not vendored. Fetch it first with the same selection:\n` +
-      `  PLANTUML_STDLIB=${STDLIB.join(',')} node scripts/fetch-stdlib.mjs`)
+    console.error(
+      `PlantUML stdlib "${lib}" is not vendored. Fetch it first with the same selection:\n` +
+        `  PLANTUML_STDLIB=${STDLIB.join(',')} node scripts/fetch-stdlib.mjs`,
+    )
     process.exit(1)
   }
   payloads[`stdlib:${lib}`] = brotli(zlib.gunzipSync(fs.readFileSync(file)))
 }
-const payloadBlock = (id, buf) => `<script type="application/x-payload" data-payload="${id}">${buf.toString('base64')}</script>`
+const payloadBlock = (id, buf) =>
+  `<script type="application/x-payload" data-payload="${id}">${buf.toString('base64')}</script>`
 
 // asciidoctor's browser build still has guarded `import('node:…')` calls (fs, path). Left external,
 // they trigger a CSP script-src violation in the frame. Resolve them to a module that throws on load,
@@ -106,7 +111,10 @@ const katexCssModule = {
   name: 'katex-css',
   setup(build) {
     build.onResolve({ filter: /^\.\/katex-css$/ }, () => ({ path: 'katex-css', namespace: 'katex-css' }))
-    build.onLoad({ filter: /.*/, namespace: 'katex-css' }, () => ({ contents: `export default ${JSON.stringify(katexCss)}`, loader: 'js' }))
+    build.onLoad({ filter: /.*/, namespace: 'katex-css' }, () => ({
+      contents: `export default ${JSON.stringify(katexCss)}`,
+      loader: 'js',
+    }))
   },
 }
 
@@ -123,7 +131,9 @@ const css = fs.readFileSync(path.join(ROOT, 'src/editor.css'), 'utf8')
 const html = `<meta charset="utf-8">
 <style>${css}</style>
 <div id="content"></div>
-${Object.entries(payloads).map(([id, buf]) => payloadBlock(id, buf)).join('\n')}
+${Object.entries(payloads)
+  .map(([id, buf]) => payloadBlock(id, buf))
+  .join('\n')}
 ${payloadBlock('app', app)}
 ${script(bootstrap)}
 `
@@ -136,7 +146,9 @@ fs.writeFileSync(path.join(ROOT, 'editor/index.html'), html)
 // dist/plugin mirrors only the plugin files, for Orca's "Development folders" (the repository root
 // would also contain node_modules). Overwrite in place, never delete: Orca watches the folder.
 const PLUGIN_FILES = ['orca-plugin.json', 'editor/index.html', 'LICENSE', 'THIRD_PARTY_NOTICES.md']
-const images = fs.existsSync(path.join(ROOT, 'images')) ? fs.readdirSync(path.join(ROOT, 'images')).map((f) => `images/${f}`) : []
+const images = fs.existsSync(path.join(ROOT, 'images'))
+  ? fs.readdirSync(path.join(ROOT, 'images')).map((f) => `images/${f}`)
+  : []
 for (const rel of [...PLUGIN_FILES, ...images]) {
   fs.mkdirSync(path.dirname(path.join(OUT, rel)), { recursive: true })
   fs.copyFileSync(path.join(ROOT, rel), path.join(OUT, rel))
@@ -144,7 +156,8 @@ for (const rel of [...PLUGIN_FILES, ...images]) {
 
 const bytes = Buffer.byteLength(html)
 console.log(`editor/index.html: ${(bytes / 1024 / 1024).toFixed(2)} MiB`)
-for (const [id, buf] of Object.entries({ app, ...payloads })) console.log(`  ${id}: ${(buf.length * 4 / 3 / 1024).toFixed(0)} KiB`)
+for (const [id, buf] of Object.entries({ app, ...payloads }))
+  console.log(`  ${id}: ${((buf.length * 4) / 3 / 1024).toFixed(0)} KiB`)
 if (bytes > MAX_ENTRY_BYTES) {
   console.error(`Entry exceeds ${MAX_ENTRY_BYTES} bytes`)
   process.exit(1)

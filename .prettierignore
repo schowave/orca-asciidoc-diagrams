@@ -1,0 +1,15 @@
+# generated or vendored
+dist/
+editor/
+vendor/
+test-results/
+playwright-report/
+docs/
+images/
+package-lock.json
+mise.lock
+# prose is not auto-formatted
+*.md
+*.adoc
+# written by scripts/release.mjs with JSON.stringify
+orca-plugin.json

@@ -21,5 +21,8 @@ export const STDLIB = [
 export function selectedStdlib() {
   const env = process.env.PLANTUML_STDLIB
   if (!env) return STDLIB
-  return env.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+  return env
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
 }

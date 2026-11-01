@@ -31,7 +31,11 @@ const [major, minor, patch] = manifest.version.split('.').map(Number)
 // RELEASE_BUMP=minor|major for feature releases (workflow_dispatch input); scheduled runs are patches.
 const bump = process.env.RELEASE_BUMP || 'patch'
 const version =
-  bump === 'major' ? `${major + 1}.0.0` : bump === 'minor' ? `${major}.${minor + 1}.0` : `${major}.${minor}.${patch + 1}`
+  bump === 'major'
+    ? `${major + 1}.0.0`
+    : bump === 'minor'
+      ? `${major}.${minor + 1}.0`
+      : `${major}.${minor}.${patch + 1}`
 
 manifest.version = version
 writeJson('orca-plugin.json', manifest)

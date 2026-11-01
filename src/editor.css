@@ -7,49 +7,213 @@
   --border: color-mix(in srgb, var(--fg) 15%, var(--bg));
   --code-bg: color-mix(in srgb, var(--fg) 6%, var(--bg));
 }
-html, body { margin: 0; background: var(--bg); color: var(--fg); }
-body { font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-#content { max-width: 920px; margin: 0 auto; padding: 24px 32px 64px; }
-h1, h2, h3, h4, h5, h6 { line-height: 1.25; margin: 1.6em 0 0.6em; }
-h1 { font-size: 2em; } h2 { font-size: 1.5em; border-bottom: 1px solid var(--border); padding-bottom: .3em; }
-a { color: var(--accent); }
-code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9em; }
-pre { background: var(--code-bg); padding: 12px 14px; border-radius: 6px; overflow-x: auto; }
-:not(pre) > code { background: var(--code-bg); padding: .1em .35em; border-radius: 4px; }
-table { border-collapse: collapse; } th, td { border: 1px solid var(--border); padding: 4px 8px; text-align: left; vertical-align: top; }
-table.stretch { width: 100%; }
-.halign-left { text-align: left; } .halign-center { text-align: center; } .halign-right { text-align: right; }
-.valign-top { vertical-align: top; } .valign-middle { vertical-align: middle; } .valign-bottom { vertical-align: bottom; }
-td.tableblock > p { margin: 0; }
-.title { color: var(--muted); font-style: italic; margin: .4em 0; }
-.admonitionblock td.icon { font-weight: 600; vertical-align: top; border: none; }
-.admonitionblock td.content { border: none; border-left: 3px solid var(--accent); }
-.diagramblock { margin: 1em 0; }
-.diagram { overflow-x: auto; }
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+body {
+  font:
+    15px/1.6 -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Helvetica,
+    Arial,
+    sans-serif;
+}
+#content {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 32px 64px;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.25;
+  margin: 1.6em 0 0.6em;
+}
+h1 {
+  font-size: 2em;
+}
+h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+}
+a {
+  color: var(--accent);
+}
+code,
+pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+pre {
+  background: var(--code-bg);
+  padding: 12px 14px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+:not(pre) > code {
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+table {
+  border-collapse: collapse;
+}
+th,
+td {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+table.stretch {
+  width: 100%;
+}
+.halign-left {
+  text-align: left;
+}
+.halign-center {
+  text-align: center;
+}
+.halign-right {
+  text-align: right;
+}
+.valign-top {
+  vertical-align: top;
+}
+.valign-middle {
+  vertical-align: middle;
+}
+.valign-bottom {
+  vertical-align: bottom;
+}
+td.tableblock > p {
+  margin: 0;
+}
+.title {
+  color: var(--muted);
+  font-style: italic;
+  margin: 0.4em 0;
+}
+.admonitionblock td.icon {
+  font-weight: 600;
+  vertical-align: top;
+  border: none;
+}
+.admonitionblock td.content {
+  border: none;
+  border-left: 3px solid var(--accent);
+}
+.diagramblock {
+  margin: 1em 0;
+}
+.diagram {
+  overflow-x: auto;
+}
 /* Fit wide diagrams to the column, like IntelliJ / Asciidoctor, but never scale small ones up.
    PlantUML sets a pixel width/height inline: max-width shrinks it, height must be forced to auto.
    Mermaid sets width="100%" plus an inline max-width of its natural size, which must stay in force. */
-.diagram svg { max-width: 100%; height: auto !important; }
-.diagram[data-kind="plantuml"].rendered, .diagram[data-kind="graphviz"].rendered { background: #ffffff; border-radius: 6px; padding: 8px; display: inline-block; max-width: 100%; box-sizing: border-box; }
-.diagram-error { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; border: 1px solid #d1242f; background: color-mix(in srgb, #d1242f 10%, var(--bg)); padding: 8px 12px; border-radius: 6px; }
+.diagram svg {
+  max-width: 100%;
+  height: auto !important;
+}
+.diagram[data-kind='plantuml'].rendered,
+.diagram[data-kind='graphviz'].rendered {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 8px;
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.diagram-error {
+  white-space: pre-wrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+  border: 1px solid #d1242f;
+  background: color-mix(in srgb, #d1242f 10%, var(--bg));
+  padding: 8px 12px;
+  border-radius: 6px;
+}
 
 /* Links: Orca blocks real navigation, so links are rewritten to data-href (see rewriteLinks). */
-a.link-internal, a.link-external { color: var(--accent); text-decoration: underline; }
-a.link-internal { cursor: pointer; }
-a.link-external { cursor: help; text-decoration-style: dotted; }
+a.link-internal,
+a.link-external {
+  color: var(--accent);
+  text-decoration: underline;
+}
+a.link-internal {
+  cursor: pointer;
+}
+a.link-external {
+  cursor: help;
+  text-decoration-style: dotted;
+}
 
 /* Placeholders for what the sandbox cannot load. */
-.image-placeholder { display: inline-block; padding: 4px 8px; border: 1px dashed var(--border); border-radius: 4px; color: var(--muted); font-size: .9em; }
-.unresolved-include { border: 1px dashed var(--border); border-radius: 6px; padding: 0 12px; color: var(--muted); font-size: .9em; margin: 1em 0; }
+.image-placeholder {
+  display: inline-block;
+  padding: 4px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 0.9em;
+}
+.unresolved-include {
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 0.9em;
+  margin: 1em 0;
+}
 
 /* toc: left / right */
-#content.with-toc-left, #content.with-toc-right { max-width: 1240px; display: flex; gap: 40px; align-items: flex-start; }
-#content.with-toc-right { flex-direction: row-reverse; }
-.toc-sidebar { flex: 0 0 240px; position: sticky; top: 0; max-height: 100vh; overflow-y: auto; padding-top: 8px; font-size: .9em; }
-.toc-sidebar ul { padding-left: 1.1em; }
-.doc-main { flex: 1 1 auto; min-width: 0; }
-#toctitle { font-weight: 600; margin-bottom: .4em; }
+#content.with-toc-left,
+#content.with-toc-right {
+  max-width: 1240px;
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+#content.with-toc-right {
+  flex-direction: row-reverse;
+}
+.toc-sidebar {
+  flex: 0 0 240px;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-top: 8px;
+  font-size: 0.9em;
+}
+.toc-sidebar ul {
+  padding-left: 1.1em;
+}
+.doc-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#toctitle {
+  font-weight: 600;
+  margin-bottom: 0.4em;
+}
 @media (max-width: 800px) {
-  #content.with-toc-left, #content.with-toc-right { display: block; }
-  .toc-sidebar { position: static; max-height: none; }
+  #content.with-toc-left,
+  #content.with-toc-right {
+    display: block;
+  }
+  .toc-sidebar {
+    position: static;
+    max-height: none;
+  }
 }
