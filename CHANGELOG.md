@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+- mise tasks for development; demo and spec cover the new formats
+- Add Graphviz, syntax highlighting, math, and custom stdlib selection
+- Update PlantUML stdlib bundles: archimate, azure, c4, domainstory, eip, k8s, kubernetes, logos, office, tupadr3
+
 ## 1.0.0
 
 First release.
