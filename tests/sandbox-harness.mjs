@@ -93,8 +93,12 @@ for (const dark of [false, true]) {
       imagePlaceholders: document.querySelectorAll('.image-placeholder').length,
       nonDataImgs: Array.from(document.querySelectorAll('#content img')).filter(i => !i.src.startsWith('data:')).length,
       c4: d[0]?.classList.contains('rendered') && /Uses/.test(d[0].innerHTML) && !/not bundled|Error/i.test(d[0].textContent),
-      tupadr3: d.at(-1)?.classList.contains('rendered') && /Web Server/.test(d.at(-1).innerHTML) && !/cannot include|error/i.test(d.at(-1).textContent),
-      tupadr3Text: (d.at(-1)?.textContent || '').slice(0, 200),
+      tupadr3: d.some(e => e.dataset.kind === 'plantuml' && e.classList.contains('rendered') && /Web Server/.test(e.innerHTML) && !/cannot include|error/i.test(e.textContent)),
+      hljsTokens: document.querySelectorAll('pre.highlight code.hljs [class^="hljs-"]').length,
+      katex: document.querySelectorAll('.katex').length,
+      katexDisplay: document.querySelectorAll('.stemblock .katex-display').length,
+      katexErrors: document.querySelectorAll('.katex-error').length,
+      graphviz: Array.from(document.querySelectorAll('.diagram[data-kind="graphviz"]')).map(e => e.classList.contains('rendered') && !!e.querySelector('svg')),
       // Small mermaid diagrams must keep their natural size (not be scaled up to the column width).
       mermaidUpscaled: Array.from(document.querySelectorAll('.diagram[data-kind="mermaid"] svg')).filter(svg => {
         const natural = parseFloat(svg.style.maxWidth); return natural && svg.getBoundingClientRect().width > natural + 1 }).length,
@@ -109,7 +113,7 @@ for (const dark of [false, true]) {
   console.log('features', JSON.stringify({ ...r, notBundled: r.notBundled.slice(0, 200), before }, null, 1))
   const ok = r.sidebar && r.hrefsLeft === 0 && r.externalTitle === 'https://example.com' &&
     /chapters\/intro\.adoc/.test(r.include || '') && r.imagePlaceholders === 2 && r.nonDataImgs === 0 &&
-    r.c4 && r.tupadr3 && r.mermaidUpscaled === 0 && r.overflowing === 0 && r.thAlign === 'left' && /not bundled/.test(r.notBundled) && r.scrollY > before + 100 && !r.violations.length && !r.errors.length
+    r.c4 && r.tupadr3 && r.hljsTokens > 3 && r.katex >= 3 && r.katexDisplay === 1 && r.katexErrors === 0 && r.graphviz.length === 2 && r.graphviz.every(Boolean) && r.mermaidUpscaled === 0 && r.overflowing === 0 && r.thAlign === 'left' && /not bundled/.test(r.notBundled) && r.scrollY > before + 100 && !r.violations.length && !r.errors.length
   if (!ok) { failed = true; console.error('✗ features: unexpected result') } else console.log('✓ features')
   await page.close()
 }

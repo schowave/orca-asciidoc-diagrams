@@ -6,7 +6,7 @@ import zlib from 'node:zlib'
 import { gzipSync } from 'fflate'
 import { fileURLToPath } from 'node:url'
 import * as esbuild from 'esbuild'
-import { STDLIB } from './stdlib-list.mjs'
+import { selectedStdlib } from './stdlib-list.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(ROOT, 'dist/plugin')
@@ -40,6 +40,7 @@ const brotli = (buf) =>
     },
   })
 const utf8 = (text) => Buffer.from(text, 'utf8')
+const STDLIB = selectedStdlib()
 const payloads = {
   // The engine is an ES module with many short top-level names (e.g. `CSS`, which would shadow
   // window.CSS). Run it in its own function scope, as a module would; it exports via globalThis.PlantUML.
@@ -49,7 +50,13 @@ const payloads = {
 // PlantUML stdlib bundles, vendored gzip-compressed (scripts/fetch-stdlib.mjs). Each one is an IIFE
 // that registers its files on window.PLANTUML_STDLIB.
 for (const lib of STDLIB) {
-  payloads[`stdlib:${lib}`] = brotli(zlib.gunzipSync(fs.readFileSync(path.join(ROOT, 'vendor/plantuml-stdlib', `${lib}.min.js.gz`))))
+  const file = path.join(ROOT, 'vendor/plantuml-stdlib', `${lib}.min.js.gz`)
+  if (!fs.existsSync(file)) {
+    console.error(`PlantUML stdlib "${lib}" is not vendored. Fetch it first with the same selection:\n` +
+      `  PLANTUML_STDLIB=${STDLIB.join(',')} node scripts/fetch-stdlib.mjs`)
+    process.exit(1)
+  }
+  payloads[`stdlib:${lib}`] = brotli(zlib.gunzipSync(fs.readFileSync(file)))
 }
 const payloadBlock = (id, buf) => `<script type="application/x-payload" data-payload="${id}">${buf.toString('base64')}</script>`
 
@@ -67,7 +74,7 @@ const nodeBuiltinStub = {
   },
 }
 
-const bundle = async (entry) =>
+const bundle = async (entry, extra = {}) =>
   (
     await esbuild.build({
       entryPoints: [path.join(ROOT, entry)],
@@ -79,8 +86,36 @@ const bundle = async (entry) =>
       minify: true,
       legalComments: 'none',
       plugins: [nodeBuiltinStub],
+      ...extra,
     })
   ).outputFiles[0].text
+// KaTeX stylesheet with its woff2 fonts inlined as data: URIs (the frame CSP allows only data: fonts).
+// The woff/ttf fallbacks stay external URLs that are never requested, because every browser Orca
+// runs on picks the woff2 source first.
+const katexCss = (
+  await esbuild.build({
+    entryPoints: [path.join(ROOT, 'node_modules/katex/dist/katex.min.css')],
+    bundle: true,
+    write: false,
+    minify: true,
+    loader: { '.woff2': 'dataurl' },
+    external: ['*.woff', '*.ttf'],
+  })
+).outputFiles[0].text
+const katexCssModule = {
+  name: 'katex-css',
+  setup(build) {
+    build.onResolve({ filter: /^\.\/katex-css$/ }, () => ({ path: 'katex-css', namespace: 'katex-css' }))
+    build.onLoad({ filter: /.*/, namespace: 'katex-css' }, () => ({ contents: `export default ${JSON.stringify(katexCss)}`, loader: 'js' }))
+  },
+}
+
+// Optional renderers, each loaded only when a document uses it.
+payloads.hljs = brotli(utf8(await bundle('src/payloads/hljs.ts', { loader: { '.css': 'text' } })))
+payloads.katex = brotli(utf8(await bundle('src/payloads/katex.ts', { plugins: [nodeBuiltinStub, katexCssModule] })))
+// viz.js 2 (Graphviz compiled to asm.js, no wasm): it attaches render/Module to an existing global Viz.
+payloads.graphviz = brotli(utf8('self.Viz={};\n' + nm('viz.js/full.render.js')))
+
 const app = gzip(utf8(await bundle('src/editor.ts')))
 const bootstrap = await bundle('src/bootstrap.ts')
 const css = fs.readFileSync(path.join(ROOT, 'src/editor.css'), 'utf8')

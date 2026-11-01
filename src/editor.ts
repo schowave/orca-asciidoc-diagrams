@@ -11,7 +11,7 @@ declare const PlantUML: {
 }
 declare const orca: any
 
-type Kind = 'plantuml' | 'mermaid'
+type Kind = 'plantuml' | 'mermaid' | 'graphviz'
 type Doc = { version: number; content: { kind: 'text'; text: string } }
 
 const w = window as any
@@ -25,8 +25,9 @@ const escapeHtml = (s: string) =>
 // [plantuml] / [mermaid] blocks become placeholders with an index into `sources`.
 // The source stays out of the HTML: DOMPurify drops attributes that contain "-->", common in diagrams.
 let sources: string[] = []
+let layouts: (string | undefined)[] = [] // graphviz `layout=` attribute per diagram
 const registry = Extensions.create()
-for (const kind of ['plantuml', 'mermaid'] as Kind[]) {
+for (const kind of ['plantuml', 'mermaid', 'graphviz'] as Kind[]) {
   registry.block(function (this: any) {
     this.named(kind)
     this.onContexts('listing', 'literal', 'open', 'paragraph')
@@ -38,6 +39,7 @@ for (const kind of ['plantuml', 'mermaid'] as Kind[]) {
       const html =
         `<div class="diagramblock" data-kind="${kind}">` +
         `<div class="diagram" data-kind="${kind}" data-idx="${sources.push(src) - 1}"></div>${title}</div>`
+      layouts[sources.length - 1] = attrs.layout
       return this.createPassBlock(parent, html, {})
     })
   })
@@ -123,11 +125,30 @@ async function renderMermaid(src: string): Promise<string> {
   }
 }
 
-function renderDiagram(kind: Kind, src: string): Promise<string> {
-  const key = `${kind}:${kind === 'mermaid' && isDark() ? 'dark' : 'light'}:${src}`
+const GRAPHVIZ_LAYOUTS = new Set(['dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo', 'osage', 'patchwork'])
+let vizModule: any
+
+async function renderGraphviz(src: string, layout = 'dot'): Promise<string> {
+  await loadPayload('graphviz')
+  const Viz = w.Viz
+  if (!GRAPHVIZ_LAYOUTS.has(layout)) throw new Error(`Unknown Graphviz layout "${layout}"`)
+  vizModule ??= Viz.Module()
+  try {
+    return Viz.render(vizModule, src, { format: 'svg', engine: layout, files: [], images: [] })
+  } catch (e) {
+    vizModule = undefined // a failed render can leave the emscripten module unusable
+    throw e
+  }
+}
+
+function renderDiagram(kind: Kind, src: string, layout?: string): Promise<string> {
+  const key = `${kind}:${kind === 'mermaid' && isDark() ? 'dark' : 'light'}:${layout ?? ''}:${src}`
   let p = cache.get(key)
   if (!p) {
-    p = kind === 'plantuml' ? renderPlantUml(src) : renderMermaid(src)
+    p =
+      kind === 'plantuml' ? renderPlantUml(src)
+      : kind === 'mermaid' ? renderMermaid(src)
+      : renderGraphviz(src, layout)
     cache.set(key, p) // failures are cached too: the same source fails the same way
     p.catch(() => {})
   }
@@ -139,7 +160,7 @@ async function renderDiagrams(gen: number) {
     const kind = el.dataset.kind as Kind
     const src = sources[Number(el.dataset.idx)] ?? ''
     try {
-      const svg = await renderDiagram(kind, src)
+      const svg = await renderDiagram(kind, src, layouts[Number(el.dataset.idx)])
       if (gen !== generation) return
       el.innerHTML = svg
       el.classList.add('rendered')
@@ -203,6 +224,54 @@ function replaceImages(container: HTMLElement) {
   }
 }
 
+// Source blocks with a language: highlight.js, loaded on first use.
+async function highlightCode(container: HTMLElement) {
+  const blocks = Array.from(container.querySelectorAll<HTMLElement>('pre.highlight > code[data-lang]'))
+  if (!blocks.length) return
+  await loadPayload('hljs')
+  const hljs = w.hljs
+  for (const code of blocks) {
+    if (hljs.getLanguage(code.dataset.lang)) hljs.highlightElement(code)
+  }
+}
+
+// :stem: — Asciidoctor leaves the math for a client-side renderer: \$…\$ (asciimath), \(…\) (latexmath)
+// inline, and \$…\$ / \[…\] inside .stemblock for blocks. KaTeX renders them, loaded on first use.
+const MATH = /\\\$([\s\S]+?)\\\$|\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]/g
+
+async function renderMath(container: HTMLElement) {
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) =>
+      n.parentElement?.closest('pre, code, script, style, .diagram') || !/\\[$([]/.test(n.nodeValue ?? '')
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT,
+  })
+  const nodes: Text[] = []
+  while (walker.nextNode()) nodes.push(walker.currentNode as Text)
+  if (!nodes.length) return
+  await loadPayload('katex')
+  const math = w.adocMath
+  for (const node of nodes) {
+    const text = node.nodeValue ?? ''
+    const display = !!node.parentElement?.closest('.stemblock')
+    let html = ''
+    let last = 0
+    for (const m of text.matchAll(MATH)) {
+      html += escapeHtml(text.slice(last, m.index))
+      const [, ascii, latexInline, latexBlock] = m
+      html += ascii !== undefined
+        ? math.render(ascii, display, 'asciimath')
+        : math.render(latexInline ?? latexBlock, display || latexBlock !== undefined, 'latexmath')
+      last = m.index! + m[0].length
+    }
+    if (!last) continue
+    html += escapeHtml(text.slice(last))
+    const span = document.createElement('span')
+    span.innerHTML = html
+    node.replaceWith(...Array.from(span.childNodes))
+  }
+}
+
 // toc: left / right → move the TOC into a sticky sidebar.
 function layoutToc(container: HTMLElement, position: string | undefined) {
   const toc = container.querySelector('#toc')
@@ -225,10 +294,12 @@ async function render(text: string) {
   const gen = ++generation
   document.documentElement.dataset.renderState = 'rendering'
   sources = []
+  layouts = []
   const doc = await load(text, {
     safe: 'secure',
     extension_registry: registry,
-    attributes: { showtitle: true },
+    // highlight.js is the only highlighter that works here (client-side, see highlightCode).
+    attributes: { showtitle: true, 'source-highlighter': 'highlight.js' },
   })
   const html = (await doc.convert()) as string
   if (gen !== generation) return
@@ -244,6 +315,8 @@ async function render(text: string) {
   root.className = fragment.className
   root.replaceChildren(...Array.from(fragment.childNodes))
   window.scrollTo(0, scrollY)
+  await Promise.all([highlightCode(root), renderMath(root)])
+  if (gen !== generation) return
   await renderDiagrams(gen)
   if (gen === generation) document.documentElement.dataset.renderState = 'done'
 }

@@ -35,6 +35,10 @@ Architecture docs often live in AsciiDoc, as in arc42 or docs-as-code, with diag
   - **eip**
   - **DomainStory**
 - Mermaid 12: flowcharts, sequence, state, class, ER, Gantt, mindmaps and more.
+- Graphviz (`[graphviz]`, with `layout=` such as `neato` or `circo`), via viz.js.
+- Syntax highlighting for source blocks with highlight.js, which covers the common languages.
+- Math with `:stem:`: `latexmath` and `asciimath`, inline and as blocks, rendered by KaTeX.
+- Every renderer loads only when a document uses it.
 - Follows Orca's light and dark theme.
 - Wide diagrams scale to fit the page.
 - A broken diagram shows an error box with its source. The rest of the document still renders.
@@ -60,6 +64,14 @@ stateDiagram-v2
   [*] --> Placed
   Placed --> Shipped
 ----
+
+[graphviz]
+----
+digraph { Order -> Payment -> Shipping }
+----
+
+:stem: latexmath
+The area is stem:[\pi r^2].
 ```
 
 - `@startuml` / `@enduml` are optional.
@@ -114,23 +126,35 @@ The preview runs in Orca's sandboxed plugin frame, which has no file system, no 
 | `include::` | Shown as a placeholder naming the file |
 | Relative or remote images | Shown as a placeholder with alt text and path. `data:` images work |
 | PlantUML `!include` of local files | Not supported |
-| Other PlantUML stdlib libraries | An error box says the library is not bundled |
+| Other PlantUML stdlib libraries | An error box says the library is not bundled. You can build the plugin with your own selection; see [Custom library selection](#custom-library-selection) |
 | External links, `xref:` to other files | The target is shown as a tooltip, but they are not clickable |
 | Raw HTML (`++++` passthrough) | Rendered, with scripts and event handlers removed |
 | PlantUML layout | Uses Smetana, because Graphviz is unavailable. Complex graphs can lay out differently from `dot` |
 
-Why some PlantUML stdlib libraries are missing:
+Why some PlantUML stdlib libraries are not in the default build:
 
 - **AWS** (`awslib14`) is too large for Orca's 10 MiB plugin page limit.
 - **gcp**, **elastic** and **edgy** declare no license, so they are not redistributed.
+
+### Custom library selection
+
+You can build the plugin with exactly the PlantUML stdlib libraries you need, for example AWS icons in place of the default set:
+
+```sh
+export PLANTUML_STDLIB=c4,awslib14      # stdlib folder names, lower-case
+node scripts/fetch-stdlib.mjs           # vendors the selected libraries
+npm run build                           # dist/plugin now contains your selection
+```
+
+Then load `dist/plugin` as a development folder, as described in [From source](#from-source). The names are the folder names in [plantuml-stdlib](https://github.com/plantuml/plantuml-stdlib/tree/master/stdlib). The build fails if the page grows beyond 9.5 MiB: Orca's limit is 10 MiB, and the default build is about 7 MiB. AWS alone adds about 3 MiB.
 
 ## How it works
 
 Orca hosts custom editors in a sandboxed iframe. Its CSP allows only inline scripts and blocks `eval`, WebAssembly, `fetch` and workers. So the build produces **one self-contained HTML file**:
 
 - Asciidoctor.js, DOMPurify and the preview code are bundled with esbuild and embedded gzip-compressed. A tiny bootstrap inflates them with the browser's `DecompressionStream`.
-- The PlantUML engine, Mermaid and the stdlib bundles are embedded **brotli-compressed**, which is about 25 % smaller than gzip. A pure-JS decoder unpacks each one only when a document first needs it.
-- The result is a single file of about 6 MiB.
+- The PlantUML engine, Mermaid, Graphviz, highlight.js, KaTeX with its fonts, and the stdlib bundles are embedded **brotli-compressed**, which is about 25 % smaller than gzip. A pure-JS decoder unpacks each one only when a document first needs it.
+- The result is a single file of about 7 MiB.
 - The rendered HTML is sanitized, so a script in a foreign `.adoc` file cannot reach Orca's document API.
 
 Design decisions are in [SPEC.md](SPEC.md).
@@ -149,7 +173,7 @@ npm run media          # regenerate images/ and docs/media/demo.gif from the bui
 
 | Path | Content |
 |---|---|
-| `src/` | The preview: `bootstrap.ts` (startup), `editor.ts`, `payloads.ts` (lazy brotli payloads), `editor.css` |
+| `src/` | The preview: `bootstrap.ts` (startup), `editor.ts`, `payloads.ts` (lazy brotli payloads), `payloads/` (highlight.js and KaTeX entries), `editor.css` |
 | `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
 | `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |
 | `vendor/plantuml-stdlib/` | Vendored stdlib bundles, gzipped. The list is in `scripts/stdlib-list.mjs`; refresh with `node scripts/fetch-stdlib.mjs` |

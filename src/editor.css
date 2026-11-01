@@ -30,7 +30,7 @@ td.tableblock > p { margin: 0; }
    PlantUML sets a pixel width/height inline: max-width shrinks it, height must be forced to auto.
    Mermaid sets width="100%" plus an inline max-width of its natural size, which must stay in force. */
 .diagram svg { max-width: 100%; height: auto !important; }
-.diagram[data-kind="plantuml"].rendered { background: #ffffff; border-radius: 6px; padding: 8px; display: inline-block; max-width: 100%; box-sizing: border-box; }
+.diagram[data-kind="plantuml"].rendered, .diagram[data-kind="graphviz"].rendered { background: #ffffff; border-radius: 6px; padding: 8px; display: inline-block; max-width: 100%; box-sizing: border-box; }
 .diagram-error { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em; overflow-wrap: anywhere; border: 1px solid #d1242f; background: color-mix(in srgb, #d1242f 10%, var(--bg)); padding: 8px 12px; border-radius: 6px; }
 
 /* Links: Orca blocks real navigation, so links are rewritten to data-href (see rewriteLinks). */

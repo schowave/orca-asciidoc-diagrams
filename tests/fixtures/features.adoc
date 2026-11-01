@@ -1,5 +1,6 @@
 = Feature Check
 :toc: left
+:stem: latexmath
 
 Jump to <<deep,the last section>>. External: https://example.com[Example].
 
@@ -63,6 +64,36 @@ Alice -> Bob
 !include <tupadr3/common>
 !include <tupadr3/font-awesome/server>
 FA_SERVER(srv, "Web Server")
+----
+
+== Code
+
+[source,java]
+----
+public class Hello {
+  public static void main(String[] args) { System.out.println("hi"); }
+}
+----
+
+== Math
+
+Inline latexmath: stem:[E = mc^2] and asciimath: asciimath:[sum_(i=1)^n i^2].
+
+[stem]
+++++
+\int_0^1 x^2 \, dx = \frac{1}{3}
+++++
+
+== Graphviz
+
+[graphviz]
+----
+digraph G { rankdir=LR; Order -> Payment -> Shipping }
+----
+
+[graphviz,layout=circo]
+----
+graph { a -- b -- c -- a }
 ----
 
 == Filler

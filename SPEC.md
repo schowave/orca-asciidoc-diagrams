@@ -100,3 +100,13 @@ The frame has no file system, no network and no wasm. As a result:
   - All other payloads are brotli (quality 11, 16 MiB window), decoded by the pure-JS `brotli` decoder (90 KB) because the frame's `DecompressionStream` has no brotli
   - Entry size: 5.96 MiB, down from 8.19 MiB
   - First render (headless Chromium): ~0.4 s for text only, ~0.6 s with PlantUML or Mermaid, ~0.85 s with tupadr3
+
+## Additional renderers (after 1.0.0)
+
+Each renderer is its own brotli payload and loads on first use:
+
+- **Syntax highlighting:** highlight.js (common languages, GitHub light and dark themes scoped to `html.dark`), applied to `pre.highlight > code[data-lang]`. Asciidoctor runs with `source-highlighter=highlight.js`.
+- **Math (`:stem:`):** KaTeX, with its woff2 fonts inlined as `data:` URIs. asciimath goes through asciimath2tex first. Delimiters as Asciidoctor emits them: `\$…\$` (asciimath), `\(…\)` and `\[…\]` (latexmath). Inside `.stemblock` the output is display mode.
+- **Graphviz:** `[graphviz]` blocks with an optional `layout=`, rendered by viz.js 2.1.2. That is asm.js Graphviz 2.40.1, so no wasm is needed. It sits on a light card like PlantUML.
+- **Custom stdlib selection:** `PLANTUML_STDLIB=a,b` overrides `scripts/stdlib-list.mjs` for both `fetch-stdlib.mjs` and `build.mjs`.
+- **Entry size:** 6.96 MiB.

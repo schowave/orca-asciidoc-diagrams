@@ -15,7 +15,10 @@ const readJson = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))
 const writeJson = (f, data) => fs.writeFileSync(path.join(ROOT, f), JSON.stringify(data, null, 2) + '\n')
 
 const changed = git('status', '--porcelain', '--', 'editor/index.html', 'vendor/plantuml-stdlib')
-if (!changed) process.exit(0) // the released build is up to date
+// A dispatched minor/major release also covers source changes whose build was committed by hand;
+// a patch (scheduled or dispatched) only happens when the fresh build differs.
+const forced = ['minor', 'major'].includes(process.env.RELEASE_BUMP ?? '')
+if (!changed && !forced) process.exit(0) // the released build is up to date
 
 const lastTag = git('tag', '--list', 'v*', '--sort=-v:refname').split('\n')[0]
 if (!lastTag) {
@@ -25,7 +28,10 @@ if (!lastTag) {
 
 const manifest = readJson('orca-plugin.json')
 const [major, minor, patch] = manifest.version.split('.').map(Number)
-const version = `${major}.${minor}.${patch + 1}`
+// RELEASE_BUMP=minor|major for feature releases (workflow_dispatch input); scheduled runs are patches.
+const bump = process.env.RELEASE_BUMP || 'patch'
+const version =
+  bump === 'major' ? `${major + 1}.0.0` : bump === 'minor' ? `${major}.${minor + 1}.0` : `${major}.${minor}.${patch + 1}`
 
 manifest.version = version
 writeJson('orca-plugin.json', manifest)

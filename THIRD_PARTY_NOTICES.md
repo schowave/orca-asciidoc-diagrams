@@ -10,6 +10,12 @@
 | DOMPurify | 3.4.17 | Apache-2.0 (dual-licensed MPL-2.0 OR Apache-2.0; used under Apache-2.0) | https://github.com/cure53/DOMPurify |
 | brotli.js (`brotli`, decoder only) | 2.1.0 | MIT | https://github.com/devongovett/brotli.js |
 | base64-js (used by the brotli decoder) | 1.5.1 | MIT | https://github.com/beatgammit/base64-js |
+| highlight.js | 11.12.0 | BSD-3-Clause | https://github.com/highlightjs/highlight.js |
+| KaTeX (including its fonts) | 0.19.1 | MIT | https://github.com/KaTeX/KaTeX |
+| asciimath2tex | 1.5.0 | Apache-2.0 | https://github.com/christianp/asciimath2tex |
+| Viz.js | 2.1.2 | MIT | https://github.com/mdaines/viz.js |
+| Graphviz 2.40.1 (compiled into Viz.js) | 2.40.1 | EPL-1.0; source code at https://gitlab.com/graphviz/graphviz | https://graphviz.org |
+| Expat 2.2.5 (compiled into Viz.js) | 2.2.5 | MIT | https://github.com/libexpat/libexpat |
 | C4-PlantUML (PlantUML stdlib `C4`) | 2.14.0 | MIT | https://github.com/plantuml-stdlib/C4-PlantUML |
 | Azure-PlantUML (PlantUML stdlib `azure`) | 2.2.0 | MIT | https://github.com/plantuml-stdlib/Azure-PlantUML |
 | plantuml-kubernetes-sprites (PlantUML stdlib `kubernetes`) | 5.3.45 | Apache-2.0 | https://github.com/plantuml-stdlib/plantuml-kubernetes-sprites |
