@@ -1,0 +1,12 @@
+# Installed by `mise run setup`. The same checks run in CI through `npm run check`.
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      glob: '*.{ts,mjs,js,json,css,yml,yaml}'
+      run: npx prettier --check {staged_files}
+    eslint:
+      glob: '*.{ts,mjs,js}'
+      run: npx eslint {staged_files}
+    large-files:
+      run: for f in {staged_files}; do [ "$(wc -c < "$f")" -le 512000 ] || { echo "$f is larger than 500 KB"; exit 1; }; done

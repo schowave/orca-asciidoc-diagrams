@@ -17,6 +17,11 @@ jobs:
       - uses: jdx/mise-action@v5
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # The same command as locally: format, lint, types, TODO rule, unit tests.
+      - name: Fast checks
+        run: npm run check
+      - name: Dead code, duplicates, licenses
+        run: npm run check:deep
       # editor/index.html on main is the last *released* build; the release workflow rebuilds and
       # commits it. Here the build is only tested, so dependency PRs need no committed rebuild.
       - name: Build and test in a replica of Orca's sandboxed frame

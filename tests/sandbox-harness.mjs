@@ -29,7 +29,7 @@ for (const dark of [false, true]) {
   const wait = async (label, fn) => {
     try {
       await frame.waitForFunction(fn, null, { timeout: 30000 })
-    } catch (e) {
+    } catch {
       const state = await frame.evaluate(() => ({
         renderState: document.documentElement.dataset.renderState,
         h1: document.querySelector('h1')?.textContent,

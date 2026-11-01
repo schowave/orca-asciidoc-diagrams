@@ -1,7 +1,7 @@
 name: Release
 
 # Weekly, after Renovate's Monday run: refresh the PlantUML stdlib bundles, rebuild and test the
-# plugin, and cut a patch release when the build differs from the last released one.
+# plugin, and cut a patch release when the plugin differs from the last released one.
 on:
   schedule:
     - cron: '0 9 * * 1' # Mondays 09:00 UTC
@@ -39,6 +39,9 @@ jobs:
         env:
           RELEASE_BUMP: ${{ inputs.bump }}
         run: echo "version=$(node scripts/release.mjs)" >> "$GITHUB_OUTPUT"
+      - name: Agent contribution measures
+        if: steps.bump.outputs.version != ''
+        run: node scripts/agent-stats.mjs
       - name: Commit, tag and publish
         if: steps.bump.outputs.version != ''
         env:
@@ -47,7 +50,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add editor/index.html vendor/plantuml-stdlib orca-plugin.json package.json package-lock.json CHANGELOG.md
+          git add editor/index.html vendor/plantuml-stdlib images orca-plugin.json package.json package-lock.json CHANGELOG.md docs/agent-stats.md
           git commit -m "Release v$VERSION"
           git tag -a "v$VERSION" -m "v$VERSION"
           git push origin HEAD:main "v$VERSION"

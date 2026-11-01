@@ -4,3 +4,10 @@ test-results/
 playwright-report/
 .DS_Store
 release-notes.md
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.idea/
+.vscode/

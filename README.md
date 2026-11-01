@@ -164,7 +164,9 @@ Design decisions are in [SPEC.md](SPEC.md).
 Tool versions and tasks live in [`mise.toml`](mise.toml), with checksums in `mise.lock`. CI uses the same files, so local and remote builds run on the same Node.
 
 ```sh
-mise run setup         # once: pinned Node, npm packages, headless Chromium for the tests (https://mise.jdx.dev)
+mise trust && mise run setup   # once: pinned Node and lefthook, npm packages, headless Chromium, git hooks (https://mise.jdx.dev)
+mise run check         # fast checks: format, lint, types, TODO rule, unit tests
+mise run check-deep    # dead code, duplicate code, dependency licenses (CI runs these too)
 mise run test          # build + render the fixtures in headless Chromium inside a replica of Orca's frame
 mise run build         # build only: editor/index.html and dist/plugin
 mise run media         # regenerate images/ and docs/media/demo.gif from the build
@@ -175,11 +177,12 @@ mise tasks             # list all tasks
 |---|---|
 | `src/` | The preview: `bootstrap.ts` (startup), `editor.ts`, `payloads.ts` (lazy brotli payloads), `payloads/` (highlight.js and KaTeX entries), `editor.css` |
 | `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
+| `tests/unit/` | Unit tests (`*.test.ts`, run by `node --test`) for the pure helpers in `src/text.ts` and `scripts/` |
 | `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |
 | `vendor/plantuml-stdlib/` | Vendored stdlib bundles, gzipped. The list is in `scripts/stdlib-list.mjs`; refresh with `node scripts/fetch-stdlib.mjs` |
-| `orca-plugin.json`, `editor/`, `images/` | The plugin as Orca installs it. `editor/index.html` is committed build output; CI checks that it matches the sources |
+| `orca-plugin.json`, `editor/`, `images/` | The plugin as Orca installs it. `editor/index.html` is committed build output; the release workflow rebuilds and commits it |
 
-Contributions are welcome. Please run `npm test` and commit the rebuilt `editor/index.html` with your change.
+Contributions are welcome. Please run `mise run check` and `mise run test`. Leave `editor/index.html` alone: the weekly release workflow rebuilds it. Rules for coding agents are in [AGENTS.md](AGENTS.md).
 
 ## License
 

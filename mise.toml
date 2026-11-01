@@ -1,8 +1,10 @@
 # Tool versions and developer tasks for local development and CI (jdx/mise-action reads this file).
-#   mise run setup   # once: Node, npm packages, headless Chromium for the tests
-#   mise run test    # build + render the fixtures in a replica of Orca's sandboxed frame
+#   mise trust && mise run setup   # once: Node, lefthook, npm packages, headless Chromium, git hooks
+#   mise run check                 # fast checks: format, lint, types, TODO rule, unit tests
+#   mise run test                  # build + render the fixtures in a replica of Orca's sandboxed frame
 [tools]
 node = "26.13.0"
+lefthook = "2.2.2"
 
 [tasks.setup]
 description = "Install everything needed to build and test the plugin"
@@ -10,7 +12,16 @@ run = [
   "mise install",
   "npm ci",
   "npx playwright install chromium",
+  "lefthook install",
 ]
+
+[tasks.check]
+description = "Fast checks: format, lint, types, TODO rule, unit tests (stops at the first failure)"
+run = "npm run check"
+
+[tasks.check-deep]
+description = "Slower checks that CI also runs: dead code, duplicates, dependency licenses"
+run = "npm run check:deep"
 
 [tasks.build]
 description = "Build editor/index.html and mirror the plugin to dist/plugin"

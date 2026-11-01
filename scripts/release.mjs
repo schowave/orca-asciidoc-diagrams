@@ -8,17 +8,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { nextVersion } from './version.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim()
 const readJson = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'))
 const writeJson = (f, data) => fs.writeFileSync(path.join(ROOT, f), JSON.stringify(data, null, 2) + '\n')
-
-const changed = git('status', '--porcelain', '--', 'editor/index.html', 'vendor/plantuml-stdlib')
-// A dispatched minor/major release also covers source changes whose build was committed by hand;
-// a patch (scheduled or dispatched) only happens when the fresh build differs.
-const forced = ['minor', 'major'].includes(process.env.RELEASE_BUMP ?? '')
-if (!changed && !forced) process.exit(0) // the released build is up to date
 
 const lastTag = git('tag', '--list', 'v*', '--sort=-v:refname').split('\n')[0]
 if (!lastTag) {
@@ -26,16 +21,27 @@ if (!lastTag) {
   process.exit(1)
 }
 
+// What Orca installs (or what feeds the build) and the listing shows. A release is due when any of
+// it differs from the last tag: committed by hand since then, or rebuilt/refetched in this run.
+const PLUGIN_PATHS = [
+  'editor/index.html',
+  'vendor/plantuml-stdlib',
+  'images',
+  'orca-plugin.json',
+  'LICENSE',
+  'THIRD_PARTY_NOTICES.md',
+]
+const changed =
+  git('status', '--porcelain', '--', ...PLUGIN_PATHS) ||
+  git('diff', '--name-only', lastTag, 'HEAD', '--', ...PLUGIN_PATHS)
+// A dispatched minor/major release also happens without such changes.
+const forced = ['minor', 'major'].includes(process.env.RELEASE_BUMP ?? '')
+if (!changed && !forced) process.exit(0) // the released plugin is up to date
+
 const manifest = readJson('orca-plugin.json')
-const [major, minor, patch] = manifest.version.split('.').map(Number)
 // RELEASE_BUMP=minor|major for feature releases (workflow_dispatch input); scheduled runs are patches.
 const bump = process.env.RELEASE_BUMP || 'patch'
-const version =
-  bump === 'major'
-    ? `${major + 1}.0.0`
-    : bump === 'minor'
-      ? `${major}.${minor + 1}.0`
-      : `${major}.${minor}.${patch + 1}`
+const version = nextVersion(manifest.version, bump)
 
 manifest.version = version
 writeJson('orca-plugin.json', manifest)

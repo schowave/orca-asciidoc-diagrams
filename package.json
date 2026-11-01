@@ -7,6 +7,17 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node scripts/build.mjs && node tests/sandbox-harness.mjs",
+    "test:unit": "node --test --experimental-test-coverage --test-coverage-include='src/text.ts' --test-coverage-include='scripts/*.mjs' --test-coverage-lines=90 tests/unit/*.test.ts",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "todo:check": "! git grep -nIE '(TODO|FIXME)' -- '*.ts' '*.mjs' '*.js' | grep -vE '(TODO|FIXME)\\([a-z0-9_.-]+\\): .*(https?://|[A-Z]+-[0-9]+)'",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run todo:check && npm run test:unit",
+    "dead-code": "knip",
+    "duplicates": "jscpd",
+    "licenses": "license-checker-rseidelsohn --production --excludePrivatePackages --excludePackages khroma@2.1.0 --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;Unlicense;EPL-2.0;MPL-2.0;(MPL-2.0 OR Apache-2.0)' --summary",
+    "check:deep": "npm run dead-code && npm run duplicates && npm run licenses",
     "media": "node scripts/media.mjs"
   },
   "dependencies": {
@@ -21,9 +32,17 @@
     "viz.js": "2.1.2"
   },
   "devDependencies": {
+    "@types/node": "26.6.6",
     "esbuild": "0.28.2",
+    "eslint": "10.14.0",
     "fflate": "0.8.3",
-    "playwright": "1.64.1"
+    "jscpd": "5.4.2",
+    "knip": "6.44.1",
+    "license-checker-rseidelsohn": "5.0.1",
+    "playwright": "1.64.1",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.1"
   },
   "description": "Orca plugin: AsciiDoc preview with inline PlantUML and Mermaid diagrams, fully offline",
   "repository": {

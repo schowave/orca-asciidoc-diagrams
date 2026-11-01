@@ -4,6 +4,7 @@
 import { load, Extensions } from '@asciidoctor/core'
 import DOMPurify from 'dompurify'
 import { loadPayload, payloadIds } from './payloads'
+import { escapeHtml, notBundledMessage, unbundledStdlib } from './text'
 
 declare const mermaid: any
 declare const PlantUML: {
@@ -15,9 +16,6 @@ type Kind = 'plantuml' | 'mermaid' | 'graphviz'
 type Doc = { version: number; content: { kind: 'text'; text: string } }
 
 const w = window as any
-
-const escapeHtml = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 // ---------------------------------------------------------------------------------------------
 // AsciiDoc extensions
@@ -68,15 +66,14 @@ const BUNDLED_STDLIB = new Set(
     .filter((id) => id.startsWith('stdlib:'))
     .map((id) => id.slice(7)),
 )
-const notBundledMessage = (lib: string) =>
-  `PlantUML library <${lib}> is not bundled in this preview. Bundled: ${[...BUNDLED_STDLIB].join(', ') || 'none'}.`
+const notBundled = (lib: string) => notBundledMessage(lib, BUNDLED_STDLIB)
 
 w.PLANTUML_STDLIB_LOADER = (url: string, ok: () => void, err: (msg: string) => void) => {
   const m = /([^/]+)\.min\.js$/.exec(url)
   if (!m) return false // themes.js, emoji.js, ...: let the engine handle (or fail) them
   const lib = m[1].toLowerCase()
   if (!BUNDLED_STDLIB.has(lib)) {
-    err(notBundledMessage(lib))
+    err(notBundled(lib))
     return true
   }
   loadPayload(`stdlib:${lib}`).then(ok, (e) => err(String(e)))
@@ -92,17 +89,9 @@ let mermaidSeq = 0
 
 const isDark = () => document.documentElement.classList.contains('dark')
 
-// `!include <lib/...>` of a library we do not bundle: fail with a clear message instead of
-// PlantUML's generic "cannot include" diagram.
-function unbundledStdlib(src: string): string | undefined {
-  for (const m of src.matchAll(/^\s*!include(?:_many|_once)?\s+<([^/>]+)/gim)) {
-    if (!BUNDLED_STDLIB.has(m[1].toLowerCase())) return m[1]
-  }
-}
-
 async function renderPlantUml(src: string): Promise<string> {
-  const missing = unbundledStdlib(src)
-  if (missing) return Promise.reject(new Error(notBundledMessage(missing)))
+  const missing = unbundledStdlib(src, BUNDLED_STDLIB)
+  if (missing) return Promise.reject(new Error(notBundled(missing)))
   await loadPayload('plantuml')
   const text = /^\s*@start/.test(src) ? src : `@startuml\n${src}\n@enduml`
   return new Promise((resolve, reject) =>

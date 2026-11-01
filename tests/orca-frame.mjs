@@ -13,7 +13,7 @@ const CSP =
   "default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; " +
   "style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'"
 
-const mockOrca = (text, dark) => `<script>
+const mockOrca = (text) => `<script>
 window.__violations = [];
 document.addEventListener('securitypolicyviolation', e => __violations.push(e.violatedDirective + ' ' + (e.blockedURI || '')));
 window.__errors = [];
@@ -54,7 +54,7 @@ export const shell = (dark, text) =>
   `<!doctype html>\n<html class="${dark ? 'dark' : 'light'}">\n<head>\n<meta charset="utf-8">\n` +
   `<meta http-equiv="Content-Security-Policy" content="${CSP}">\n` +
   `<style>:root{--orca-background:${dark ? '#1e1e1e' : '#ffffff'};--orca-foreground:${dark ? '#d4d4d4' : '#1f2328'};--orca-primary:#3b82f6}</style>\n` +
-  mockOrca(text, dark) +
+  mockOrca(text) +
   ORCA_SHELL_POLICY +
   `</head>\n` +
   pluginHtml()
