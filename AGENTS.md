@@ -1,4 +1,4 @@
-# AsciiDoc Preview – Diagrams, Code & Math (Orca plugin)
+# AsciiDoc Preview – PlantUML, Mermaid & Graphviz (Orca plugin)
 
 An Orca plugin that renders AsciiDoc with inline PlantUML, Mermaid and Graphviz diagrams, fully offline, inside Orca's sandboxed frame. It builds into one self-contained `editor/index.html` (about 6 MiB; Orca's limit is 10 MiB).
 
