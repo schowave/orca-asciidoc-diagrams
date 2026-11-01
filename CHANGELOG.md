@@ -2,11 +2,9 @@
 
 ## 1.1.1
 
-- Rename to "AsciiDoc Preview – Diagrams, Code & Math"; cover lists all formats
-- Add agent harness: checks, unit tests, agent guide, context docs
-- Format with Prettier
-- CHANGELOG: correct the 1.1.0 entry
-- fetch-stdlib: rewrite a bundle only when its content changed
+- New name: **AsciiDoc Preview – Diagrams, Code & Math**. The plugin id is unchanged, so existing installs update normally
+- The cover lists all formats: PlantUML, Mermaid, Graphviz, code and math
+- Internal: a developer harness (formatting, linting, unit tests and agent guide) and more reliable release automation
 
 ## 1.1.0
 
