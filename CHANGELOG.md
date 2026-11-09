@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4
+
+- README: link to the plugin's page in the Orca directory
+- CHANGELOG: user-facing notes for 1.1.3
+- Update PlantUML stdlib bundles: archimate, c4, domainstory
+
 ## 1.1.3
 
 - New name: **AsciiDoc Preview – PlantUML, Mermaid & Graphviz**. The plugin id is unchanged, so existing installs update normally
