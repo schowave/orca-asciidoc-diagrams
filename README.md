@@ -9,6 +9,7 @@
 [![CI](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml/badge.svg)](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Orca ≥ 1.4.245](https://img.shields.io/badge/Orca-%E2%89%A5%201.4.245-7c3aed.svg)](https://github.com/stablyai/orca)
+[![Orca plugin directory](https://img.shields.io/badge/Orca-plugin%20directory-7c3aed.svg)](https://www.onorca.dev/plugins/schowave/orca-asciidoc-diagrams)
 
 <img src="docs/media/demo.gif" width="800" alt="Typing AsciiDoc with a PlantUML sequence diagram and a Mermaid state diagram; the preview updates as you type">
 
@@ -89,6 +90,8 @@ Requires **Orca 1.4.245 or newer**.
 ### From the Orca plugin directory
 
 **[Open in Orca](https://onorca.dev/plugins/schowave.asciidoc-diagrams?catalog=community)**: the link opens the plugin's page in Orca under Settings → Plugins; press **Install**. Updates install automatically.
+
+The plugin's page in the directory, with screenshots and versions: [onorca.dev/plugins/schowave/orca-asciidoc-diagrams](https://www.onorca.dev/plugins/schowave/orca-asciidoc-diagrams).
 
 ### From the Git URL
 
