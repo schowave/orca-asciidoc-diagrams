@@ -3,7 +3,6 @@
   "manifestVersion": 2,
   "execution": "sandboxed-ui",
   "id": "asciidoc-diagrams",
-  "publisher": "schowave",
   "name": "AsciiDoc Preview – PlantUML, Mermaid & Graphviz",
   "version": "1.1.4",
   "description": "Live preview for AsciiDoc files with inline PlantUML, Mermaid and Graphviz diagrams, highlighted code and math. Renders fully offline: no server, no Java.",
@@ -16,7 +15,7 @@
   "license": "MIT",
   "icon": "images/icon.png",
   "engines": {
-    "orca": ">=1.4.245"
+    "orca": ">=1.4.246"
   },
   "contributes": {
     "customEditors": [

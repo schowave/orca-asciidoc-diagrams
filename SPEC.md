@@ -8,12 +8,11 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
 
 - **Plugin:**
   - Name: **AsciiDoc Preview – PlantUML, Mermaid & Graphviz**
-  - id `asciidoc-diagrams`; publisher `schowave`, the repository owner
+  - id `asciidoc-diagrams`; Orca derives the publisher `schowave` from the repository owner
   - Install key `schowave.asciidoc-diagrams`
 - **Repository:** MIT license, public `github.com/schowave/orca-asciidoc-diagrams`, GitHub topic `orca-plugin`
 - **Manifest:**
-  - `manifestVersion: 2`, `execution: "sandboxed-ui"`, `engines.orca: ">=1.4.245"`, because custom editors exist since 1.4.245
-  - Keep `publisher` while supporting 1.4.245; it can be omitted only from `>=1.4.246`
+  - `manifestVersion: 2`, `execution: "sandboxed-ui"`, `engines.orca: ">=1.4.246"`. Custom editors exist since 1.4.245, but only from 1.4.246 can the deprecated `publisher` field be left out; with it, the community catalog shows an author note on the public plugin page
 - **Layout:** the plugin lives at the repository root, because Orca installs from a Git commit:
   - `orca-plugin.json`
   - `editor/index.html`: committed build output
