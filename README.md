@@ -8,7 +8,7 @@
 
 [![CI](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml/badge.svg)](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Orca ≥ 1.4.245](https://img.shields.io/badge/Orca-%E2%89%A5%201.4.245-7c3aed.svg)](https://github.com/stablyai/orca)
+[![Orca ≥ 1.4.246](https://img.shields.io/badge/Orca-%E2%89%A5%201.4.246-7c3aed.svg)](https://github.com/stablyai/orca)
 [![Orca plugin directory](https://img.shields.io/badge/Orca-plugin%20directory-7c3aed.svg)](https://www.onorca.dev/plugins/schowave/orca-asciidoc-diagrams)
 
 <img src="docs/media/demo.gif" width="800" alt="Typing AsciiDoc with a PlantUML sequence diagram and a Mermaid state diagram; the preview updates as you type">
@@ -85,7 +85,7 @@ The area is stem:[\pi r^2].
 
 ## Installation
 
-Requires **Orca 1.4.245 or newer**.
+Requires **Orca 1.4.246 or newer**.
 
 ### From the Orca plugin directory
 
