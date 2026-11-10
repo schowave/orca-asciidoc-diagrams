@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+
+- Require Orca 1.4.246 and drop the deprecated publisher field
+
 ## 1.1.4
 
 - README: link to the plugin's page in the Orca directory
