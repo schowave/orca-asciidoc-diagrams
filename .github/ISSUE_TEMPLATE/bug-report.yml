@@ -1,0 +1,41 @@
+name: Bug report
+description: Something renders wrongly, fails, or the preview misbehaves
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report. The smallest document that shows the problem helps most.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: adoc
+    attributes:
+      label: AsciiDoc that shows it
+      description: The smallest snippet that reproduces the problem.
+      render: asciidoc
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Settings → Plugins → AsciiDoc Preview
+      placeholder: 1.2.1
+    validations:
+      required: true
+  - type: input
+    id: orca-version
+    attributes:
+      label: Orca version and OS
+      placeholder: Orca 1.4.250, macOS 15
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot or error message
+      description: The text of the error box, if a diagram failed.

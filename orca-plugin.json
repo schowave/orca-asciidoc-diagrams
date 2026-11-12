@@ -33,13 +33,13 @@
     ]
   },
   "cover": {
-    "path": "images/cover.png",
-    "alt": "AsciiDoc document with a C4 context diagram rendered next to its table of contents"
+    "path": "images/cover.jpg",
+    "alt": "The plugin name and formats next to a rendered C4 context diagram"
   },
   "screenshots": [
     {
       "path": "images/screenshot-light.png",
-      "alt": "Architecture document with PlantUML C4, sequence and Mermaid diagrams in a light theme",
+      "alt": "Architecture document with a PlantUML sequence diagram and a Mermaid state diagram in a light theme",
       "caption": "PlantUML and Mermaid diagrams, rendered offline"
     },
     {

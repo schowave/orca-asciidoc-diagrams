@@ -28,14 +28,15 @@ Work in a git worktree of your own, not in the main checkout. In a new worktree 
 ## Definition of done
 
 - `mise run check` is green, and `mise run test` where the stages above require it.
-- User-visible change → entry in `README.md` (features, limitations) and, if it changes the design, `SPEC.md`. `CHANGELOG.md` is written by `scripts/release.mjs`; do not edit it.
+- User-visible change → entry in `README.md` (features, limitations) and, if it changes the design, `SPEC.md`.
+- User-visible change → also a line under `## Unreleased` in `CHANGELOG.md`, written for users of the plugin (what changes for them, not how). `scripts/release.mjs` turns that section into the release entry and the GitHub release notes. Do not edit released entries.
 - Technical decision with real alternatives → new ADR in `docs/adr/` (not enforced).
 - New domain term → entry in `GLOSSARY.md` (not enforced).
 
 ## Layout
 
 - `src/`: the preview that runs in the frame. `bootstrap.ts` starts it, `convert.ts` turns AsciiDoc into HTML plus diagram sources (no DOM), `editor.ts` renders (DOM), `text.ts` holds the pure helpers, `payloads.ts` loads the lazy compressed engines and `base122.ts` decodes them (decision: `docs/adr/0002-single-file-bundle-for-orca-frame.md`).
-- `scripts/`: build (`build.mjs`), stdlib download and lock (`fetch-stdlib.mjs`, `stdlib-lock.mjs`), release and stats scripts. `tests/unit/`: unit tests. `tests/`: browser harness and fixtures.
+- `scripts/`: build (`build.mjs`), stdlib download and lock (`fetch-stdlib.mjs`, `stdlib-lock.mjs`), release (`release.mjs`, with the changelog helpers in `changelog.mjs`) and stats scripts. `tests/unit/`: unit tests. `tests/`: browser harness and fixtures.
 - Generated, do not edit: `editor/index.html`, `dist/`, `vendor/plantuml-stdlib/` (a gitignored download cache), `vendor/plantuml-stdlib.lock.json`.
 
 ## Conventions

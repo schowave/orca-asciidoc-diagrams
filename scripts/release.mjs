@@ -1,13 +1,14 @@
 // Cuts a patch release when the freshly built plugin differs from the committed one.
 // Used by .github/workflows/release.yml after `npm test` has rebuilt editor/index.html:
 //   node scripts/release.mjs        → prints the new version, or nothing when there is nothing to release
-// It bumps the version in orca-plugin.json, package.json and package-lock.json and prepends a
-// CHANGELOG entry listing the commits since the last tag. Committing, tagging and pushing are left
-// to the workflow.
+// It bumps the version in orca-plugin.json, package.json and package-lock.json and turns the CHANGELOG's
+// "## Unreleased" notes into the release entry (falling back to the commits since the last tag when there
+// are none). Committing, tagging and pushing are left to the workflow.
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { unreleasedNotes, withRelease } from './changelog.mjs'
 import { changedLibs } from './stdlib-lock.mjs'
 import { nextVersion, withInstallUrlVersion } from './version.mjs'
 
@@ -53,9 +54,6 @@ for (const f of ['package.json', 'package-lock.json']) {
   writeJson(f, data)
 }
 
-const commits = git('log', '--no-merges', '--format=%s', `${lastTag}..HEAD`)
-  .split('\n')
-  .filter((s) => s && !s.startsWith('Release '))
 const LOCK = 'vendor/plantuml-stdlib.lock.json'
 const lockAt = (ref) => {
   try {
@@ -64,16 +62,24 @@ const lockAt = (ref) => {
     return {} // not committed yet at that ref
   }
 }
-const stdlib = changedLibs(lockAt('HEAD'), readJson(LOCK))
-const lines = [
-  ...commits.map((s) => `- ${s}`),
-  ...(stdlib.length ? [`- Update PlantUML stdlib bundles: ${stdlib.join(', ')}`] : []),
-]
-const entry = `## ${version}\n\n${lines.length ? lines.join('\n') : '- Rebuild'}\n\n`
+// Against the last release, so lock updates merged between releases are named too.
+const stdlib = changedLibs(lockAt(lastTag), readJson(LOCK))
+const stdlibLine = stdlib.length ? [`- Updated PlantUML libraries: ${stdlib.join(', ')}`] : []
+const changelogFile = path.join(ROOT, 'CHANGELOG.md')
+const changelog = fs.readFileSync(changelogFile, 'utf8')
+let notes = unreleasedNotes(changelog)
+if (!notes.length) {
+  // Nobody wrote notes: list the commit subjects, as before.
+  notes = git('log', '--no-merges', '--format=%s', `${lastTag}..HEAD`)
+    .split('\n')
+    .filter((s) => s && !s.startsWith('Release ') && !s.startsWith('CHANGELOG'))
+    .map((s) => `- ${s}`)
+}
+const lines = [...notes, ...stdlibLine]
+if (!lines.length) lines.push('- Rebuild')
 const readme = path.join(ROOT, 'README.md')
 fs.writeFileSync(readme, withInstallUrlVersion(fs.readFileSync(readme, 'utf8'), version))
-const changelog = fs.readFileSync(path.join(ROOT, 'CHANGELOG.md'), 'utf8')
-fs.writeFileSync(path.join(ROOT, 'CHANGELOG.md'), changelog.replace(/^(# Changelog\n\n)/, `$1${entry}`))
-fs.writeFileSync(path.join(ROOT, 'release-notes.md'), lines.join('\n') || '- Rebuild')
+fs.writeFileSync(changelogFile, withRelease(changelog, version, lines))
+fs.writeFileSync(path.join(ROOT, 'release-notes.md'), lines.join('\n') + '\n')
 
 console.log(version)

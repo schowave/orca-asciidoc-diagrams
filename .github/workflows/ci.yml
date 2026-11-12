@@ -12,9 +12,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Installs the tool versions from mise.toml, the same ones used locally.
-      - uses: jdx/mise-action@v5
+      - uses: jdx/mise-action@d5574b52816a478f9d4e6529a3f6ff17a8a36785 # v5.2.8
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       # The PlantUML stdlib bundles are not committed; download them (checked against the lock).

@@ -30,17 +30,31 @@ async function screenshot(dark, file, viewport = { width: 1280, height: 800 }, d
   await page.setContent(hostPage(dark, demo))
   const frame = page.frames()[1]
   await waitRendered(frame)
-  if (scrollTo) await frame.evaluate((id) => document.getElementById(id).scrollIntoView(), scrollTo)
+  // Scroll a section to the top, with some room above its heading so it is not cut off.
+  if (scrollTo)
+    await frame.evaluate((id) => {
+      document.getElementById(id).scrollIntoView()
+      window.scrollBy(0, -32)
+    }, scrollTo)
   await page.screenshot({ path: file })
   await page.close()
   return file
 }
-await screenshot(false, path.join(IMAGES, 'screenshot-light.png'))
+// The light shot shows the checkout sequence (PlantUML) and the order states (Mermaid), which fill the width;
+// the C4 context diagram at the top of the demo is on the cover.
+await screenshot(false, path.join(IMAGES, 'screenshot-light.png'), undefined, 2, '_checkout_flow')
 // The dark shot shows the second half of the demo: Graphviz, highlighted code and math.
 await screenshot(true, path.join(IMAGES, 'screenshot-dark.png'), undefined, 2, '_order_pipeline')
-// Narrower shot for the cover, so the document fills the card.
-const tmpShot = path.join(os.tmpdir(), `adoc-cover-${process.pid}.png`)
-const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
+// The cover shows the whole C4 context diagram, cut tightly from the rendered demo.
+const light = path.join(os.tmpdir(), `adoc-cover-${process.pid}.png`)
+{
+  const page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 2 })
+  await page.setContent(hostPage(false, demo))
+  const frame = page.frames()[1]
+  await waitRendered(frame)
+  await frame.locator('.diagram svg').first().screenshot({ path: light })
+  await page.close()
+}
 
 // --- Icon (256×256) --------------------------------------------------------------------------------
 {
@@ -84,11 +98,22 @@ const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
       ${['PlantUML', 'Mermaid', 'Graphviz', 'Code', 'Math', 'Offline'].map((t) => `<span style="padding:7px 16px;border-radius:999px;background:rgba(255,255,255,.15)">${t}</span>`).join('')}
     </div>
   </div>
-  <div style="position:absolute;left:860px;top:345px;width:660px;height:310px;overflow:hidden;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.5)">
-    <img src="data:image/png;base64,${shot}" style="position:absolute;left:-170px;top:-245px;width:900px">
+  <div style="position:absolute;left:860px;top:345px;width:660px;height:310px;display:flex;align-items:center;justify-content:center">
+    <div style="padding:16px 28px;border-radius:16px;background:#fff;box-shadow:0 24px 70px rgba(0,0,0,.5)">
+      <img src="data:image/png;base64,${shot}" style="display:block;height:278px">
+    </div>
   </div>
 </body>`)
-  await page.screenshot({ path: path.join(IMAGES, 'cover.png') })
+  // JPEG: the gradient makes a PNG about 850 KB, over the repository's 500 KB file limit.
+  await page.screenshot({ path: path.join(IMAGES, 'cover.jpg'), type: 'jpeg', quality: 90 })
+  // GitHub's social preview (Settings → Social preview, uploaded by hand): the same design at 2:1, which is
+  // the cover's middle 800 px. It stays out of images/, which is part of the plugin.
+  await page.screenshot({
+    path: path.join(MEDIA, 'social-preview.jpg'),
+    type: 'jpeg',
+    quality: 88,
+    clip: { x: 0, y: 100, width: 1600, height: 800 },
+  })
   // What Orca's banner shows: the middle band.
   await page.screenshot({
     path: path.join(os.tmpdir(), 'adoc-cover-band.png'),
@@ -101,7 +126,10 @@ const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
 {
   const W = 1280
   const H = 720
-  const intro = '= Online Shop\n\nThe shop takes orders and ships parcels.\n\n'
+  // The first frame is what a static preview of the GIF shows, so it already holds a diagram.
+  const intro =
+    '= Online Shop\n\nThe shop takes orders and ships parcels.\n\n' +
+    '[graphviz]\n----\ndigraph { rankdir=LR; Order -> Payment -> Shipping }\n----\n\n'
   const steps = [
     '== Checkout\n\n',
     '[plantuml]\n----\n',
@@ -189,6 +217,9 @@ const light = await screenshot(false, tmpShot, { width: 900, height: 900 }, 2)
 }
 
 await browser.close()
-for (const f of [...fs.readdirSync(IMAGES).map((f) => path.join(IMAGES, f)), path.join(MEDIA, 'demo.gif')]) {
+for (const f of [
+  ...fs.readdirSync(IMAGES).map((f) => path.join(IMAGES, f)),
+  ...['demo.gif', 'social-preview.jpg'].map((f) => path.join(MEDIA, f)),
+]) {
   console.log(`${path.relative(ROOT, f)}: ${(fs.statSync(f).size / 1024).toFixed(0)} KiB`)
 }

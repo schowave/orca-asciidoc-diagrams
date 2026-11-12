@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New cover and screenshots on the plugin page: the cover shows the complete C4 diagram, the screenshots show a sequence and a state diagram, and Graphviz, code and math in the dark theme
+
 ## 1.2.1
 
 - Editing no longer makes the preview jump: when you change a diagram above where you are reading, the page keeps its position while the diagram re-renders

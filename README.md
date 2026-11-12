@@ -10,6 +10,9 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Orca ≥ 1.4.246](https://img.shields.io/badge/Orca-%E2%89%A5%201.4.246-7c3aed.svg)](https://github.com/stablyai/orca)
 [![Orca plugin directory](https://img.shields.io/badge/Orca-plugin%20directory-7c3aed.svg)](https://www.onorca.dev/plugins/schowave/orca-asciidoc-diagrams)
+[![Latest release](https://img.shields.io/github/v/release/schowave/orca-asciidoc-diagrams?color=7c3aed)](CHANGELOG.md)
+
+**[Install in Orca](https://onorca.dev/plugins/schowave.asciidoc-diagrams?catalog=community)** · [Plugin page](https://www.onorca.dev/plugins/schowave/orca-asciidoc-diagrams) · [Changelog](CHANGELOG.md)
 
 <img src="docs/media/demo.gif" width="800" alt="Typing AsciiDoc with a PlantUML sequence diagram and a Mermaid state diagram; the preview updates as you type">
 
@@ -22,6 +25,8 @@ Architecture docs often live in AsciiDoc, as in arc42 or docs-as-code, with diag
 - **No server, no Java, no Kroki.** PlantUML, Mermaid and Graphviz run inside Orca's plugin sandbox, so your diagram sources never leave your machine.
 - **Same syntax as [asciidoctor-diagram](https://docs.asciidoctor.org/diagram-extension/latest/).** Files keep rendering in Asciidoctor, IntelliJ and GitLab.
 - **Live.** The preview follows your edits, including unsaved ones.
+
+Orca itself previews Markdown and shows Mermaid files. This plugin adds AsciiDoc, with PlantUML (including C4 and the other bundled libraries), Mermaid and Graphviz diagrams inside the document.
 
 ## Features
 
@@ -44,6 +49,10 @@ Architecture docs often live in AsciiDoc, as in arc42 or docs-as-code, with diag
 - Wide diagrams scale to fit the page.
 - A broken diagram shows an error box with its source. The rest of the document still renders.
 - `:toc:` renders a table of contents. `:toc: left` and `:toc: right` render it as a sticky sidebar. In-document links scroll to their target.
+
+## Privacy and permissions
+
+Orca's plugin page lists the plugin as *Opens and edits files*, because it is the editor for `.adoc` files. In practice it only reads: the preview never writes to your document; you edit in Orca's **Source** view. It has no network access, so neither the document nor its diagrams leave your machine. The rendered HTML is sanitized, so scripts in a document from someone else do not run. Details are in [SECURITY.md](SECURITY.md).
 
 ## Usage
 
@@ -79,8 +88,8 @@ The area is stem:[\pi r^2].
 - `[source,plantuml]` is shown as code, not rendered.
 
 <table><tr>
-<td><img src="images/screenshot-light.png" alt="Architecture document with C4, sequence and Mermaid diagrams in a light theme"></td>
-<td><img src="images/screenshot-dark.png" alt="The same document in a dark theme"></td>
+<td><img src="images/screenshot-light.png" alt="Architecture document with a PlantUML sequence diagram and a Mermaid state diagram in a light theme"></td>
+<td><img src="images/screenshot-dark.png" alt="The same document in a dark theme: a Graphviz event diagram, highlighted TypeScript and a KaTeX formula"></td>
 </tr></table>
 
 ## Installation
@@ -157,6 +166,16 @@ npm run build                           # dist/plugin now contains your selectio
 
 Then load `dist/plugin` as a development folder, as described in [From source](#from-source). The names are the folder names in [plantuml-stdlib](https://github.com/plantuml/plantuml-stdlib/tree/master/stdlib). The build fails if the page grows beyond 9.5 MiB: Orca's limit is 10 MiB, and the default build is about 6 MiB. AWS alone adds about 2.7 MiB.
 
+## Troubleshooting
+
+| Problem | What to do |
+|---|---|
+| A diagram shows "library … is not bundled" | The PlantUML stdlib library is not in the default build. Build your own selection ([Custom library selection](#custom-library-selection)) or [ask for it](https://github.com/schowave/orca-asciidoc-diagrams/issues/new/choose) |
+| Math shows as `\(…\)` or `\$…\$` | Set `:stem:` (or `:stem: latexmath`) in the document header |
+| A `.adoc` file opens as text, not as a preview | Switch the tab's view to **Preview**, and check that the plugin is enabled under Settings → Plugins |
+| A PlantUML diagram looks different from IntelliJ | The preview uses PlantUML's Smetana layout, because Graphviz `dot` cannot run in the sandbox |
+| A rebuild from source does not show up | Reopen the tab, or remove and re-add the development folder |
+
 ## How it works
 
 Orca hosts custom editors in a sandboxed iframe. Its CSP allows only inline scripts and blocks `eval`, WebAssembly, `fetch` and workers. So the build produces **one self-contained HTML file**:
@@ -168,30 +187,9 @@ Orca hosts custom editors in a sandboxed iframe. Its CSP allows only inline scri
 
 Design decisions are in [SPEC.md](SPEC.md).
 
-## Development
+## Contributing
 
-Tool versions and tasks live in [`mise.toml`](mise.toml), with checksums in `mise.lock`. CI uses the same files, so local and remote builds run on the same Node.
-
-```sh
-mise trust && mise run setup   # once: pinned Node and lefthook, npm packages, headless Chromium, git hooks (https://mise.jdx.dev)
-mise run check         # fast checks: format, lint, types, TODO rule, unit tests
-mise run check-deep    # dead code, duplicate code, dependency licenses (CI runs these too)
-mise run test          # build + render the fixtures in headless Chromium inside a replica of Orca's frame
-mise run build         # build only: editor/index.html and dist/plugin
-mise run media         # regenerate images/ and docs/media/demo.gif from the build
-mise tasks             # list all tasks
-```
-
-| Path | Content |
-|---|---|
-| `src/` | The preview: `bootstrap.ts` (startup), `convert.ts` (AsciiDoc to HTML), `editor.ts` (rendering), `text.ts` (pure helpers), `payloads.ts` and `base122.ts` (lazy brotli payloads), `payloads/` (highlight.js and KaTeX entries), `editor.css` |
-| `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
-| `tests/unit/` | Unit tests (`*.test.ts`, run by `node --test`) for `src/text.ts`, `src/convert.ts`, `src/base122.ts` and `scripts/` |
-| `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |
-| `vendor/plantuml-stdlib.lock.json` | SHA-256 of each bundled PlantUML stdlib library. The libraries themselves are not committed, because the Orca catalog refuses archives. `mise run fetch-stdlib` downloads them into the gitignored `vendor/plantuml-stdlib/`, and `--update` pins new upstream versions; the release workflow does that weekly. The list is in `scripts/stdlib-list.mjs` |
-| `orca-plugin.json`, `editor/`, `images/` | The plugin as Orca installs it. `editor/index.html` is committed build output; the release workflow rebuilds and commits it |
-
-Contributions are welcome. Please run `mise run check` and `mise run test`. Leave `editor/index.html` alone: the weekly release workflow rebuilds it. Rules for coding agents are in [AGENTS.md](AGENTS.md).
+Bug reports and pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) for the development setup and checks. Security issues go through [SECURITY.md](SECURITY.md).
 
 ## License
 

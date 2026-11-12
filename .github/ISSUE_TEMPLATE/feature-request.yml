@@ -1,0 +1,20 @@
+name: Feature request
+description: A diagram type, PlantUML library or AsciiDoc feature you are missing
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like the preview to do?
+      description: For a diagram type or PlantUML stdlib library, name it and link an example.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does it matter to you?
+  - type: markdown
+    attributes:
+      value: |
+        The preview runs in Orca's sandbox without network, Java or WebAssembly, and must stay under 10 MiB.
+        Some formats are impossible there; see the [limitations](https://github.com/schowave/orca-asciidoc-diagrams#limitations).
