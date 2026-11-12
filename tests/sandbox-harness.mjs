@@ -125,6 +125,8 @@ for (const dark of [false, true]) {
         (a) => a.hasAttribute('href') || a.hasAttributeNS('http://www.w3.org/1999/xlink', 'href'),
       ).length,
       diagramLink: document.querySelector('.diagram svg a.link-external')?.dataset.href,
+      // SVG ignores title=; the tooltip is a <title> child (the engine's own or ours)
+      diagramLinkTooltip: document.querySelector('.diagram svg a.link-external > title')?.textContent,
       externalTitle: document.querySelector('a.link-external')?.title,
       include: document.querySelector('.unresolved-include')?.textContent.trim(),
       imagePlaceholders: document.querySelectorAll('.image-placeholder').length,
@@ -166,6 +168,7 @@ for (const dark of [false, true]) {
     r.sidebar &&
     r.hrefsLeft === 0 &&
     r.diagramLink === 'https://example.com/diagram-link' &&
+    !!r.diagramLinkTooltip &&
     r.externalTitle === 'https://example.com' &&
     /chapters\/intro\.adoc/.test(r.include || '') &&
     r.imagePlaceholders === 2 &&
@@ -207,9 +210,12 @@ for (const dark of [false, true]) {
   )
   const scrollAfterEdit = await frame.evaluate(() => Math.min(window.scrollY, window.__minScrollY))
   console.log('scroll after edit', { before: scrollBeforeEdit, after: scrollAfterEdit })
-  if (!ok || Math.abs(scrollAfterEdit - scrollBeforeEdit) > 2) {
+  if (!ok) {
     failed = true
     console.error('✗ features: unexpected result')
+  } else if (Math.abs(scrollAfterEdit - scrollBeforeEdit) > 2) {
+    failed = true
+    console.error(`✗ features: scroll position moved from ${scrollBeforeEdit} to ${scrollAfterEdit} during an edit`)
   } else console.log('✓ features')
   await page.close()
 }

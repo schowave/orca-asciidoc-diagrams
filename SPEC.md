@@ -34,7 +34,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
 - **Live updates:** `orca.document.onDidChange` triggers a re-render, including on unsaved changes
   - Debounced by about 250 ms
   - Versions already rendered are skipped
-  - The scroll position is preserved: after the first render, a new page is built off-screen (code, math, diagrams) and swapped in complete, so its height never collapses while a changed diagram renders
+  - The scroll position is preserved: diagrams already rendered are filled in before the new page is shown, and a changed diagram keeps the height of the one it replaces until it is rendered
   - Diagrams are cached by source; failures are cached too. After each render only the current document's diagrams stay cached
 - **AsciiDoc:** asciidoctor.js 4 in `safe: secure` mode
 - **Diagrams:** asciidoctor-diagram block syntax, `----` delimited, with optional title and attributes. `[source,<lang>]` stays code.
@@ -94,7 +94,7 @@ The frame has no file system, no network and no wasm.
 | PlantUML `!include` of local files | Unsupported |
 | Libraries | Cannot be installed at runtime: the frame has no storage, and frames of different plugins cannot talk to each other. A future Orca frame↔worker channel (stablyai/orca#36429, panels only so far) could change that |
 
-## Platform constraints (verified against Orca 1.4.245; the manifest requires 1.4.246 only for the `publisher` field)
+## Platform constraints (verified against Orca 1.4.245; the manifest requires 1.4.246 so that it can leave out the `publisher` field)
 
 - **Frame:** `<iframe sandbox="allow-scripts">` (srcdoc) with this CSP:
   `default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`

@@ -65,13 +65,13 @@ async function renderPlantUml(src: string): Promise<string> {
   )
 }
 
-async function renderMermaid(src: string): Promise<string> {
+async function renderMermaid(src: string, dark: boolean): Promise<string> {
   await loadPayload('mermaid')
   mermaid.initialize({
     startOnLoad: false,
     securityLevel: 'strict',
     suppressErrorRendering: true, // we show our own error box instead of mermaid's appended error SVG
-    theme: isDark() ? 'dark' : 'default',
+    theme: dark ? 'dark' : 'default',
   })
   const id = `mermaid-${++mermaidSeq}`
   try {
@@ -100,44 +100,78 @@ async function renderGraphviz(src: string, layout = 'dot'): Promise<string> {
   }
 }
 
-function renderDiagram({ kind, src, layout }: Diagram): Promise<string> {
+// `dark` is read once per render, so the cache key and Mermaid's theme always agree.
+function renderDiagram({ kind, src, layout }: Diagram, dark: boolean): Promise<string> {
   if (kind === 'plantuml') return renderPlantUml(src)
-  if (kind === 'mermaid') return renderMermaid(src)
+  if (kind === 'mermaid') return renderMermaid(src, dark)
   return renderGraphviz(src, layout)
 }
 
-// Rendered SVGs by diagramKey. Failures are cached too: the same source fails the same way.
-// After each completed render only the diagrams of the current document stay.
-let cache = new Map<string, Promise<string>>()
+type Outcome = { svg: string } | { error: string }
+type Entry = { promise: Promise<Outcome>; outcome?: Outcome }
 
-async function renderDiagrams(container: HTMLElement, diagrams: Diagram[], isCurrent: () => boolean) {
-  const kept = new Map<string, Promise<string>>()
-  for (const el of Array.from(container.querySelectorAll<HTMLElement>('.diagram'))) {
-    const diagram = diagrams[Number(el.dataset.idx)]
+// Diagram results by diagramKey, with the outcome kept once settled so a re-render can reuse it at once.
+// Failures are cached too: the same source fails the same way. Only the current document's diagrams stay.
+let cache = new Map<string, Entry>()
+
+function entryFor(diagram: Diagram, dark: boolean): [string, Entry] {
+  const key = diagramKey(diagram, dark)
+  let entry = cache.get(key)
+  if (!entry) {
+    const created: Entry = {
+      promise: renderDiagram(diagram, dark).then(
+        (svg) => ({ svg }),
+        (e) => ({ error: String((e as Error)?.message ?? e) }),
+      ),
+    }
+    void created.promise.then((outcome) => (created.outcome = outcome))
+    entry = created
+    cache.set(key, created) // a diagram used twice in one document renders once
+  }
+  return [key, entry]
+}
+
+function fill(el: HTMLElement, diagram: Diagram, outcome: Outcome) {
+  el.style.minHeight = ''
+  if ('svg' in outcome) {
+    el.innerHTML = outcome.svg
+    el.classList.add('rendered')
+    rewriteLinks(el) // links in diagrams (PlantUML [[url]], Graphviz URL=) are links too
+  } else {
+    el.classList.add('failed')
+    el.innerHTML =
+      `<div class="diagram-error"><strong>${diagram.kind} error:</strong> ${escapeHtml(outcome.error)}</div>` +
+      `<pre>${escapeHtml(diagram.src)}</pre>`
+  }
+}
+
+type Pending = { el: HTMLElement; diagram: Diagram; entry: Entry }
+
+/**
+ * Starts every diagram of the new page and fills in those already rendered. A diagram still rendering keeps
+ * the height of the one it replaces, so the page does not shrink and the scroll position holds.
+ */
+function prepareDiagrams(page: HTMLElement, diagrams: Diagram[]): Pending[] {
+  const dark = isDark()
+  const previous = Array.from(root.querySelectorAll<HTMLElement>('.diagram'))
+  const kept = new Map<string, Entry>()
+  const pending: Pending[] = []
+  for (const el of Array.from(page.querySelectorAll<HTMLElement>('.diagram'))) {
+    const idx = Number(el.dataset.idx)
+    const diagram = diagrams[idx]
     if (!diagram) continue
-    const key = diagramKey(diagram, isDark())
-    let p = cache.get(key)
-    if (!p) {
-      p = renderDiagram(diagram)
-      p.catch(() => {})
-      cache.set(key, p)
+    const [key, entry] = entryFor(diagram, dark)
+    kept.set(key, entry)
+    if (entry.outcome) {
+      fill(el, diagram, entry.outcome)
+      continue
     }
-    kept.set(key, p)
-    try {
-      const svg = await p
-      if (!isCurrent()) return
-      el.innerHTML = svg
-      el.classList.add('rendered')
-      rewriteLinks(el) // links in diagrams (PlantUML [[url]], Graphviz URL=) are links too
-    } catch (e) {
-      if (!isCurrent()) return
-      el.classList.add('failed')
-      el.innerHTML =
-        `<div class="diagram-error"><strong>${diagram.kind} error:</strong> ${escapeHtml(String((e as Error)?.message ?? e))}</div>` +
-        `<pre>${escapeHtml(diagram.src)}</pre>`
-    }
+    const height = previous[idx]?.offsetHeight
+    if (height) el.style.minHeight = `${height}px`
+    pending.push({ el, diagram, entry })
   }
   cache = kept
+  return pending
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -159,8 +193,15 @@ function rewriteLinks(container: HTMLElement) {
     if (internal) {
       a.setAttribute('role', 'link')
       a.tabIndex = 0
-    } else if (!a.hasAttribute('title')) {
-      a.setAttribute('title', href) // a tooltip in HTML; harmless in SVG
+    } else if (a instanceof SVGElement) {
+      // SVG ignores the title attribute; its tooltip is a <title> child.
+      if (!a.querySelector(':scope > title')) {
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title')
+        title.textContent = href
+        a.prepend(title)
+      }
+    } else if (!a.title) {
+      a.title = href
     }
   }
 }
@@ -248,8 +289,7 @@ function layoutToc(container: HTMLElement, position: string | undefined) {
 
 let generation = 0
 
-// The first render fills the page as diagrams arrive. Later renders (edits, theme changes) build the
-// new page off-screen and swap it in complete, so the page keeps its height and the scroll position holds.
+// Text, code and math appear at once; diagrams fill in as they finish (cached ones before the page is shown).
 async function render(text: string) {
   const gen = ++generation
   const isCurrent = () => gen === generation
@@ -258,30 +298,31 @@ async function render(text: string) {
     const { html, diagrams, tocPosition, stem } = await convertAdoc(text)
     if (!isCurrent()) return
 
-    const fragment = document.createElement('div')
-    fragment.innerHTML = DOMPurify.sanitize(html)
-    rewriteLinks(fragment)
-    replaceImages(fragment)
-    layoutToc(fragment, tocPosition)
+    const page = document.createElement('div')
+    page.innerHTML = DOMPurify.sanitize(html)
+    rewriteLinks(page)
+    replaceImages(page)
+    layoutToc(page, tocPosition)
+    await Promise.all([highlightCode(page), stem && renderMath(page)])
+    if (!isCurrent()) return
 
-    const progressive = !root.hasChildNodes()
-    const target = progressive ? root : fragment
-    if (progressive) show(fragment)
-    await Promise.all([highlightCode(target), stem && renderMath(target)])
-    if (!isCurrent()) return
-    await renderDiagrams(target, diagrams, isCurrent)
-    if (!isCurrent()) return
-    if (!progressive) show(fragment)
+    const pending = prepareDiagrams(page, diagrams)
+    show(page)
+    for (const { el, diagram, entry } of pending) {
+      const outcome = await entry.promise
+      if (!isCurrent()) return
+      fill(el, diagram, outcome)
+    }
     document.documentElement.dataset.renderState = 'done'
   } catch (e) {
     if (isCurrent()) showFatal(e) // an older render's failure must not replace a newer page
   }
 }
 
-function show(fragment: HTMLElement) {
+function show(page: HTMLElement) {
   const scrollY = window.scrollY
-  root.className = fragment.className
-  root.replaceChildren(...Array.from(fragment.childNodes))
+  root.className = page.className
+  root.replaceChildren(...Array.from(page.childNodes))
   window.scrollTo(0, scrollY)
 }
 
