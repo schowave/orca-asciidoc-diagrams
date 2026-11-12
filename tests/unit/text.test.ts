@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   anchorId,
+  cssLength,
   diagramKey,
   escapeHtml,
   notBundledMessage,
@@ -82,4 +83,11 @@ test('diagramKey carries the theme only for Mermaid', () => {
 test('anchorId decodes percent escapes and keeps a stray percent sign', () => {
   assert.equal(anchorId('#caf%C3%A9'), 'café')
   assert.equal(anchorId('#100%'), '100%')
+})
+
+test('cssLength accepts numbers, px and %, and nothing else', () => {
+  assert.equal(cssLength('300'), '300px')
+  assert.equal(cssLength(' 12.5px '), '12.5px')
+  assert.equal(cssLength('40%'), '40%')
+  for (const bad of [undefined, '', '0', '3em', '1px;color:red', 'auto']) assert.equal(cssLength(bad), undefined)
 })

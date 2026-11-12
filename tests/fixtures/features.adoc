@@ -96,6 +96,19 @@ digraph G { rankdir=LR; Order -> Payment -> Shipping }
 graph { a -- b -- c -- a }
 ----
 
+== Figures
+
+[[fig-flow]]
+.Order flow
+[mermaid, width=480, align=center]
+----
+graph LR
+  Order --> Payment
+----
+
+.Deployment
+plantuml::diagrams/deploy.puml[]
+
 == Filler
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit.
@@ -151,5 +164,7 @@ A diagram with a link:
 ----
 rectangle "Docs" [[https://example.com/diagram-link]]
 ----
+
+Back to <<fig-flow>>.
 
 The end.

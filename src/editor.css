@@ -117,6 +117,19 @@ td.tableblock > p {
 .diagram {
   overflow-x: auto;
 }
+/* align= on a diagram or image block, as in Asciidoctor: it aligns the content, not the title. */
+.text-left > .diagram,
+.text-left > .content {
+  text-align: left;
+}
+.text-center > .diagram,
+.text-center > .content {
+  text-align: center;
+}
+.text-right > .diagram,
+.text-right > .content {
+  text-align: right;
+}
 /* Fit wide diagrams to the column, like IntelliJ / Asciidoctor, but never scale small ones up.
    PlantUML sets a pixel width/height inline: max-width shrinks it, height must be forced to auto.
    Mermaid sets width="100%" plus an inline max-width of its natural size, which must stay in force. */

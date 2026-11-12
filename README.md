@@ -42,6 +42,7 @@ Orca itself previews Markdown and shows Mermaid files. This plugin adds AsciiDoc
   - **DomainStory**
 - Mermaid 12: flowcharts, sequence, state, class, ER, Gantt, mindmaps and more.
 - Graphviz (`[graphviz]`, with `layout=` such as `neato` or `circo`), via viz.js.
+- Diagrams are figures, as in asciidoctor-diagram: a title gets its number (*Figure 1.*, or your `:figure-caption:`), `<<id>>` jumps to the diagram, and `width=`, `height=`, `align=` and `role=` work as on images.
 - Syntax highlighting for source blocks with highlight.js, which covers the common languages.
 - Math with `:stem:`: `latexmath` and `asciimath`, inline and as blocks, rendered by KaTeX. As in Asciidoctor, a document without `:stem:` shows the delimiters as text.
 - Every renderer loads only when a document uses it.
@@ -142,6 +143,7 @@ The preview runs in Orca's sandboxed plugin frame, which has no file system, no 
 | What | Behavior |
 |---|---|
 | `include::` | Shown as a placeholder naming the file |
+| Diagram files (`plantuml::file.puml[]`, `mermaid::`, `graphviz::`) | Shown as a placeholder naming the file; title, number and id are kept |
 | Relative or remote images | Shown as a placeholder with alt text and path. `data:` images work |
 | PlantUML `!include` of local files | Not supported |
 | Other PlantUML stdlib libraries | An error box says the library is not bundled. You can build the plugin with your own selection; see [Custom library selection](#custom-library-selection) |

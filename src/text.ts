@@ -26,6 +26,16 @@ export const wrapPlantUml = (src: string) => (/^\s*@start/.test(src) ? src : `@s
 export const diagramKey = ({ kind, src, layout }: Diagram, dark: boolean) =>
   `${kind}:${kind === 'mermaid' && dark ? 'dark' : 'light'}:${layout ?? ''}:${src}`
 
+/**
+ * A `width` or `height` block attribute as a CSS length: a bare number is pixels, as in Asciidoctor; `px` and `%`
+ * are kept. Anything else is ignored (undefined), so no attribute value reaches the style unchecked.
+ */
+export function cssLength(value: unknown): string | undefined {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*(px|%)?\s*$/.exec(String(value ?? ''))
+  if (!m || Number(m[1]) === 0) return undefined
+  return `${m[1]}${m[2] ?? 'px'}`
+}
+
 /** Target id of an in-document link (`#id`), percent-decoded when that is valid. */
 export function anchorId(href: string): string {
   const id = href.slice(1)

@@ -45,6 +45,13 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
   - `[graphviz]`:
     - viz.js 2.1.2: Graphviz 2.40.1 compiled to asm.js, so no wasm is needed
     - Optional `layout=` (`dot`, `neato`, `fdp`, `sfdp`, `twopi`, `circo`, `osage`, `patchwork`)
+  - **Figures**, as in asciidoctor-diagram:
+    - A titled diagram gets a caption number (`:figure-caption:`, default `Figure`) from the counter it shares with images; `caption=` overrides it and `:figure-caption!:` turns it off
+    - The block id (`[[id]]`, `[#id]`, `id=`) is on the figure, so a cross reference scrolls to it
+    - `width=` and `height=` (a number is pixels; `px` and `%`) set the display size, which may scale a diagram up but never beyond the column; `align=` (`left`, `center`, `right`) and `role=` work as on images
+    - The positional `target` and `format` attributes are ignored: the preview always renders SVG
+    - Block macros (`plantuml::file[]`, `mermaid::`, `graphviz::`) read a file, which the frame cannot: they show a placeholder that keeps the title, number and id
+    - The caption is assigned while parsing; the HTML is written after `load()`, once titles have their substitutions
 - **PlantUML stdlib:**
   - Bundled: C4, kubernetes, k8s, azure, archimate, eip, DomainStory, office, logos, tupadr3
   - Loaded lazily via `PLANTUML_STDLIB_LOADER`

@@ -151,7 +151,10 @@ for (const dark of [false, true]) {
         (e) => e.classList.contains('rendered') && !!e.querySelector('svg'),
       ),
       // Small mermaid diagrams must keep their natural size (not be scaled up to the column width).
-      mermaidUpscaled: Array.from(document.querySelectorAll('.diagram[data-kind="mermaid"] svg')).filter((svg) => {
+      // (A diagram with width= may be scaled up, as in Asciidoctor; it is checked below.)
+      mermaidUpscaled: Array.from(
+        document.querySelectorAll('.diagram[data-kind="mermaid"]:not([data-width]) svg'),
+      ).filter((svg) => {
         const natural = parseFloat(svg.style.maxWidth)
         return natural && svg.getBoundingClientRect().width > natural + 1
       }).length,
@@ -163,8 +166,31 @@ for (const dark of [false, true]) {
       errors: window.__errors,
     }
   })
+  // Figures: id, caption, width=, align= and the placeholder of a block macro; then a cross reference to the figure.
+  await frame.click('#content a.link-internal[data-href="#fig-flow"]')
+  await frame.waitForTimeout(200)
+  const fig = await frame.evaluate(() => {
+    const block = document.getElementById('fig-flow')
+    const macro = Array.from(document.querySelectorAll('.diagramblock')).find((b) => /Deployment/.test(b.textContent))
+    return {
+      top: Math.round(block?.getBoundingClientRect().top ?? -1),
+      title: block?.querySelector('.title')?.textContent,
+      width: Math.round(block?.querySelector('svg')?.getBoundingClientRect().width ?? 0),
+      align: block && getComputedStyle(block.querySelector('.diagram')).textAlign,
+      macro: macro?.textContent,
+    }
+  })
+  console.log('figures', JSON.stringify(fig))
+  const figOk =
+    Math.abs(fig.top) <= 2 &&
+    /^Figure \d+\. Order flow$/.test(fig.title ?? '') &&
+    Math.abs(fig.width - 480) <= 1 &&
+    fig.align === 'center' &&
+    /diagrams\/deploy\.puml/.test(fig.macro ?? '') &&
+    /^Figure \d+\. Deployment/.test(fig.macro?.split('puml').pop() ?? '')
   console.log('features', JSON.stringify({ ...r, notBundled: r.notBundled.slice(0, 200), before }, null, 1))
   const ok =
+    figOk &&
     r.sidebar &&
     r.hrefsLeft === 0 &&
     r.diagramLink === 'https://example.com/diagram-link' &&
