@@ -54,7 +54,7 @@ for (const dark of [false, true]) {
       document.querySelector('h1')?.textContent === 'Updated' &&
       document.documentElement.dataset.renderState === 'done',
   )
-  const live = await frame.evaluate(() => document.querySelectorAll('.diagram.rendered svg').length)
+  const live = await frame.evaluate(() => document.querySelectorAll('.diagram.rendered > svg').length)
   await frame.evaluate((t) => window.__setText(t), sample)
   await wait(
     'second update',
@@ -101,10 +101,11 @@ for (const dark of [false, true]) {
   await page.close()
 }
 
-// v1 features: toc sidebar, link handling, include/image placeholders, bundled stdlib.
-{
+const features = fs.readFileSync(path.join(ROOT, 'tests/fixtures/features.adoc'), 'utf8')
+
+// tests/fixtures/features.adoc in the replica frame, rendered completely.
+async function openFeatures() {
   const page = await browser.newPage({ viewport: { width: 1100, height: 700 } })
-  const features = fs.readFileSync(path.join(ROOT, 'tests/fixtures/features.adoc'), 'utf8')
   const srcdoc = shell(false, features).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
   await page.setContent(
     `<!doctype html><meta charset="utf-8"><body style="margin:0">` +
@@ -112,6 +113,12 @@ for (const dark of [false, true]) {
   )
   const frame = page.frames()[1]
   await frame.waitForFunction(() => document.documentElement.dataset.renderState === 'done', null, { timeout: 30000 })
+  return { page, frame }
+}
+
+// v1 features: toc sidebar, link handling, include/image placeholders, bundled stdlib.
+{
+  const { page, frame } = await openFeatures()
   const before = await frame.evaluate(() => window.scrollY)
   await page.screenshot({ path: path.join(OUT, 'features.png') })
   await frame.click('#content .doc-main a.link-internal[data-href="#deep"]')
@@ -124,9 +131,9 @@ for (const dark of [false, true]) {
       hrefsLeft: Array.from(document.querySelectorAll('#content a')).filter(
         (a) => a.hasAttribute('href') || a.hasAttributeNS('http://www.w3.org/1999/xlink', 'href'),
       ).length,
-      diagramLink: document.querySelector('.diagram svg a.link-external')?.dataset.href,
+      diagramLink: document.querySelector('.diagram > svg a.link-external')?.dataset.href,
       // SVG ignores title=; the tooltip is a <title> child (the engine's own or ours)
-      diagramLinkTooltip: document.querySelector('.diagram svg a.link-external > title')?.textContent,
+      diagramLinkTooltip: document.querySelector('.diagram > svg a.link-external > title')?.textContent,
       externalTitle: document.querySelector('a.link-external')?.title,
       include: document.querySelector('.unresolved-include')?.textContent.trim(),
       imagePlaceholders: document.querySelectorAll('.image-placeholder').length,
@@ -148,12 +155,12 @@ for (const dark of [false, true]) {
       katexDisplay: document.querySelectorAll('.stemblock .katex-display').length,
       katexErrors: document.querySelectorAll('.katex-error').length,
       graphviz: Array.from(document.querySelectorAll('.diagram[data-kind="graphviz"]')).map(
-        (e) => e.classList.contains('rendered') && !!e.querySelector('svg'),
+        (e) => e.classList.contains('rendered') && !!e.querySelector(':scope > svg'),
       ),
       // Small mermaid diagrams must keep their natural size (not be scaled up to the column width).
       // (A diagram with width= may be scaled up, as in Asciidoctor; it is checked below.)
       mermaidUpscaled: Array.from(
-        document.querySelectorAll('.diagram[data-kind="mermaid"]:not([data-width]) svg'),
+        document.querySelectorAll('.diagram[data-kind="mermaid"]:not([data-width]) > svg'),
       ).filter((svg) => {
         const natural = parseFloat(svg.style.maxWidth)
         return natural && svg.getBoundingClientRect().width > natural + 1
@@ -175,7 +182,7 @@ for (const dark of [false, true]) {
     return {
       top: Math.round(block?.getBoundingClientRect().top ?? -1),
       title: block?.querySelector('.title')?.textContent,
-      width: Math.round(block?.querySelector('svg')?.getBoundingClientRect().width ?? 0),
+      width: Math.round(block?.querySelector('.diagram > svg')?.getBoundingClientRect().width ?? 0),
       align: block && getComputedStyle(block.querySelector('.diagram')).textAlign,
       macro: macro?.textContent,
     }
@@ -243,6 +250,96 @@ for (const dark of [false, true]) {
     failed = true
     console.error(`✗ features: scroll position moved from ${scrollBeforeEdit} to ${scrollAfterEdit} during an edit`)
   } else console.log('✓ features')
+  await page.close()
+}
+
+// Diagram toolbar and zoom overlay. The clipboard is not reachable from a page on about:blank, so execCommand is
+// stubbed to record what would be copied.
+{
+  const { page, frame } = await openFeatures()
+  const problems = []
+  const check = (ok, what) => ok || problems.push(what)
+  const overlay = () =>
+    frame.evaluate(() => {
+      const o = document.querySelector('.zoom-overlay')
+      return (
+        o && {
+          role: o.getAttribute('role'),
+          svg: !!o.querySelector('.zoom-canvas > svg'),
+          scale: Number(o.querySelector('.zoom-canvas')?.dataset.scale),
+          focusInside: o.contains(document.activeElement),
+        }
+      )
+    })
+  const zoomButton = '.diagram.rendered[data-kind="graphviz"] .diagram-tools button[data-action="zoom"]'
+
+  await frame.click(zoomButton)
+  const opened = await overlay()
+  check(
+    opened?.role === 'dialog' && opened.svg && opened.focusInside,
+    `zoom opens a focused dialog: ${JSON.stringify(opened)}`,
+  )
+  const box = await page.locator('iframe').boundingBox()
+  await page.mouse.move(box.x + 550, box.y + 350)
+  await page.mouse.wheel(0, -400)
+  const zoomed = await overlay()
+  check(zoomed?.scale > opened?.scale, `the wheel zooms in: ${opened?.scale} → ${zoomed?.scale}`)
+  await frame.press('.zoom-overlay', 'Escape')
+  const afterEsc = await frame.evaluate(() => ({
+    open: !!document.querySelector('.zoom-overlay'),
+    focus: document.activeElement?.dataset.action,
+  }))
+  check(!afterEsc.open && afterEsc.focus === 'zoom', `Esc closes and returns focus: ${JSON.stringify(afterEsc)}`)
+
+  await frame.dblclick('.diagram.rendered[data-kind="mermaid"] > svg')
+  check((await overlay())?.svg, 'a double click opens the zoom')
+  await frame.click('.zoom-bar button[data-action="close"]')
+  check(!(await overlay()), 'the close button closes the zoom')
+
+  await frame.evaluate(() => {
+    window.__copyResult = true
+    document.execCommand = (cmd) => {
+      if (cmd === 'copy') window.__copied = document.activeElement?.value
+      return window.__copyResult
+    }
+  })
+  const copy = async (selector) => {
+    await frame.click(selector)
+    return frame.evaluate(
+      (sel) => ({
+        text: window.__copied,
+        status: document.querySelector(sel).closest('.diagram-tools').querySelector('.diagram-tools-status')
+          .textContent,
+        leftovers: document.querySelectorAll('body > textarea').length,
+      }),
+      selector,
+    )
+  }
+  const graphviz = '.diagram.rendered[data-kind="graphviz"] .diagram-tools'
+  const src = await copy(`${graphviz} button[data-action="source"]`)
+  check(
+    /Order -> Payment -> Shipping/.test(src.text) && src.status === 'Copied' && !src.leftovers,
+    `copy source: ${JSON.stringify(src)}`,
+  )
+  const svg = await copy(`${graphviz} button[data-action="svg"]`)
+  check(/<svg[\s\S]*Payment/.test(svg.text ?? ''), `copy SVG: ${(svg.text ?? '').slice(0, 80)}`)
+  await frame.evaluate(() => (window.__copyResult = false))
+  const denied = await copy(`${graphviz} button[data-action="source"]`)
+  check(denied.status === 'Copy not available', `a refused copy is reported: ${denied.status}`)
+
+  const failedTools = await frame.evaluate(() =>
+    Array.from(document.querySelectorAll('.diagram.failed .diagram-tools button')).map((b) => b.dataset.action),
+  )
+  check(
+    failedTools.length > 0 && failedTools.every((a) => a === 'source'),
+    `a failed diagram offers only copy source: ${failedTools}`,
+  )
+  const errors = await frame.evaluate(() => [...window.__violations, ...window.__errors])
+  check(!errors.length, `no errors or CSP violations: ${errors}`)
+  if (problems.length) {
+    failed = true
+    console.error(`✗ diagram tools:\n  ${problems.join('\n  ')}`)
+  } else console.log('✓ diagram tools')
   await page.close()
 }
 

@@ -35,7 +35,7 @@ Work in a git worktree of your own, not in the main checkout. In a new worktree 
 
 ## Layout
 
-- `src/`: the preview that runs in the frame. `bootstrap.ts` starts it, `convert.ts` turns AsciiDoc into HTML plus diagram sources (no DOM), `editor.ts` renders (DOM), `text.ts` holds the pure helpers, `payloads.ts` loads the lazy compressed engines and `base122.ts` decodes them (decision: `docs/adr/0002-single-file-bundle-for-orca-frame.md`).
+- `src/`: the preview that runs in the frame. `bootstrap.ts` starts it, `convert.ts` turns AsciiDoc into HTML plus diagram sources (no DOM), `editor.ts` renders (DOM), `diagram-tools.ts` and `zoom.ts` add the toolbar and zoom overlay on each diagram (DOM), `text.ts` holds the pure helpers, `payloads.ts` loads the lazy compressed engines and `base122.ts` decodes them (decision: `docs/adr/0002-single-file-bundle-for-orca-frame.md`).
 - `scripts/`: build (`build.mjs`), stdlib download and lock (`fetch-stdlib.mjs`, `stdlib-lock.mjs`), release (`release.mjs`, with the changelog helpers in `changelog.mjs`) and stats scripts. `tests/unit/`: unit tests. `tests/`: browser harness and fixtures.
 - Generated, do not edit: `editor/index.html`, `dist/`, `vendor/plantuml-stdlib/` (a gitignored download cache), `vendor/plantuml-stdlib.lock.json`.
 

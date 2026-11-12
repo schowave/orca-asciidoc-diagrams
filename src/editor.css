@@ -116,6 +116,111 @@ td.tableblock > p {
 }
 .diagram {
   overflow-x: auto;
+  position: relative;
+}
+
+/* Toolbar over a diagram (src/diagram-tools.ts): shown on hover and keyboard focus, never part of the layout. */
+.diagram-tools {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  font-size: 12px;
+  line-height: 1;
+}
+.diagram:hover > .diagram-tools,
+.diagram-tools:focus-within,
+.diagram-tools:has(.diagram-tools-status:not(:empty)) {
+  opacity: 1;
+}
+.diagram-tools button,
+.zoom-bar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.diagram-tools button svg {
+  fill: currentColor;
+}
+.diagram-tools button:hover,
+.zoom-bar button:hover {
+  background: var(--code-bg);
+}
+.diagram-tools button:focus-visible,
+.zoom-bar button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.diagram-tools-status:not(:empty) {
+  padding: 0 6px;
+  color: var(--muted);
+}
+
+/* Zoom overlay (src/zoom.ts). */
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.zoom-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.zoom-bar button {
+  border: 1px solid var(--border);
+}
+.zoom-stage {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+.zoom-stage.dragging {
+  cursor: grabbing;
+}
+.zoom-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+.zoom-canvas > svg {
+  display: block;
+}
+.zoom-canvas[data-kind='plantuml'],
+.zoom-canvas[data-kind='graphviz'] {
+  background: #ffffff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .diagram-tools {
+    transition: none;
+  }
 }
 /* align= on a diagram or image block, as in Asciidoctor: it aligns the content, not the title. */
 .text-left > .diagram,
@@ -133,7 +238,7 @@ td.tableblock > p {
 /* Fit wide diagrams to the column, like IntelliJ / Asciidoctor, but never scale small ones up.
    PlantUML sets a pixel width/height inline: max-width shrinks it, height must be forced to auto.
    Mermaid sets width="100%" plus an inline max-width of its natural size, which must stay in force. */
-.diagram svg {
+.diagram > svg {
   max-width: 100%;
   height: auto !important;
 }

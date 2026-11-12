@@ -47,7 +47,8 @@ Orca itself previews Markdown and shows Mermaid files. This plugin adds AsciiDoc
 - Math with `:stem:`: `latexmath` and `asciimath`, inline and as blocks, rendered by KaTeX. As in Asciidoctor, a document without `:stem:` shows the delimiters as text.
 - Every renderer loads only when a document uses it.
 - Follows Orca's light and dark theme.
-- Wide diagrams scale to fit the page.
+- Wide diagrams scale to fit the page. **Zoom** (the toolbar on a diagram, or a double click) shows one full-size: zoom with the wheel or a pinch, drag to pan, `Esc` to close.
+- The toolbar also copies a diagram's source or its SVG.
 - A broken diagram shows an error box with its source. The rest of the document still renders.
 - `:toc:` renders a table of contents. `:toc: left` and `:toc: right` render it as a sticky sidebar. In-document links scroll to their target.
 
@@ -148,6 +149,7 @@ The preview runs in Orca's sandboxed plugin frame, which has no file system, no 
 | PlantUML `!include` of local files | Not supported |
 | Other PlantUML stdlib libraries | An error box says the library is not bundled. You can build the plugin with your own selection; see [Custom library selection](#custom-library-selection) |
 | External links, `xref:` to other files, links in diagrams | The target is shown as a tooltip, but they are not clickable |
+| Copying a diagram | Copies text only: the source, or the SVG as markup. The frame may not write images to the clipboard |
 | Raw HTML (`++++` passthrough) | Rendered, with scripts and event handlers removed |
 | PlantUML layout | Uses Smetana, because Graphviz is unavailable. Complex graphs can lay out differently from `dot` |
 

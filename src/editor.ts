@@ -4,6 +4,7 @@
 // The AsciiDoc conversion is in src/convert.ts, the pure helpers in src/text.ts.
 import DOMPurify from 'dompurify'
 import { convertAdoc } from './convert'
+import { addDiagramTools } from './diagram-tools'
 import { loadPayload, payloadIds } from './payloads'
 import {
   anchorId,
@@ -138,18 +139,20 @@ function fill(el: HTMLElement, diagram: Diagram, outcome: Outcome) {
     el.classList.add('rendered')
     applySize(el)
     rewriteLinks(el) // links in diagrams (PlantUML [[url]], Graphviz URL=) are links too
+    addDiagramTools(el, { source: diagram.src, svg: outcome.svg })
   } else {
     el.classList.add('failed')
     el.innerHTML =
       `<div class="diagram-error"><strong>${diagram.kind} error:</strong> ${escapeHtml(outcome.error)}</div>` +
       `<pre>${escapeHtml(diagram.src)}</pre>`
+    addDiagramTools(el, { source: diagram.src })
   }
 }
 
 // `width=` / `height=` on the block (checked CSS lengths from convert.ts). Like an image in Asciidoctor, this may
 // scale a diagram up; the column width still caps it (max-width), which also overrides Mermaid's inline max-width.
 function applySize(el: HTMLElement) {
-  const svg = el.querySelector('svg')
+  const svg = el.querySelector<SVGSVGElement>(':scope > svg')
   const { width, height } = el.dataset
   if (!svg || (!width && !height)) return
   svg.style.maxWidth = '100%'

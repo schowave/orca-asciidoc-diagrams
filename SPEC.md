@@ -52,6 +52,8 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
     - The positional `target` and `format` attributes are ignored: the preview always renders SVG
     - Block macros (`plantuml::file[]`, `mermaid::`, `graphviz::`) read a file, which the frame cannot: they show a placeholder that keeps the title, number and id
     - The caption is assigned while parsing; the HTML is written after `load()`, once titles have their substitutions
+  - **Toolbar** (`src/diagram-tools.ts`), over the diagram on hover and keyboard focus so it never shifts the layout: *Zoom*, *Copy source*, *Copy SVG*; a failed diagram offers only *Copy source*
+  - **Zoom** (`src/zoom.ts`): an overlay over the whole frame with a copy of the SVG at its natural size. Wheel and pinch zoom towards the pointer, dragging pans, *Fit* and *100 %*, `+`/`-`/`0`; `Esc`, *Close* or a click on the backdrop closes it and returns the focus. A double click on a diagram opens it too
 - **PlantUML stdlib:**
   - Bundled: C4, kubernetes, k8s, azure, archimate, eip, DomainStory, office, logos, tupadr3
   - Loaded lazily via `PLANTUML_STDLIB_LOADER`
@@ -125,6 +127,7 @@ The frame has no file system, no network and no wasm.
   - `orca.document.onDidChange(cb)`: delivers the current document right away, then each change
   - `orca.on('theme', cb)`
   - The theme also arrives as the `light`/`dark` class on `<html>`
+- **Clipboard:** Orca's frame is `<iframe sandbox="allow-scripts">` without `allow` (checked in Orca 1.4.257), so the Permissions Policy blocks `navigator.clipboard`. `document.execCommand('copy')` on a selected textarea after a click works, and copies text only
 
 ## Architecture
 

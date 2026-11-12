@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Zoom into a diagram: the new toolbar on each diagram (or a double click) shows it full-size, with wheel or pinch zoom and drag to pan
+- Copy a diagram's source or its SVG from the same toolbar
 - Diagram titles are numbered like images (*Figure 1.*), following `:figure-caption:`, and a cross reference such as `<<context>>` now jumps to the diagram
 - Diagrams accept `width=`, `height=`, `align=` and `role=`, as images do
 - `plantuml::file.puml[]` and the other diagram block macros show a placeholder naming the file, instead of the raw line
