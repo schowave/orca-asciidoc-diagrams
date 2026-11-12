@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.2
+
 - New cover and screenshots on the plugin page: the cover shows the complete C4 diagram, the screenshots show a sequence and a state diagram, and Graphviz, code and math in the dark theme
 
 ## 1.2.1
