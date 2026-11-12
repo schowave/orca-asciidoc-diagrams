@@ -2,19 +2,19 @@
 
 ## 1.2.1
 
-- Render text at once again; keep diagram heights instead of holding the page
-- Docs: match the code (base-122, 6 MiB, Graphviz, :stem:, diagram links)
-- Keep the scroll position, deactivate diagram links, math only with :stem:
+- Editing no longer makes the preview jump: when you change a diagram above where you are reading, the page keeps its position while the diagram re-renders
+- Links inside diagrams (PlantUML `[[url]]`, Graphviz `URL=`) can no longer navigate the preview away; like other external links, they show their target as a tooltip
+- Math is rendered only when the document sets `:stem:`, as in Asciidoctor. Text such as `\(x\)` in documents without `:stem:` stays as written
+- More robust live updates: a slow or failing render no longer overwrites a newer one, and memory use stays flat during long editing sessions
 
 ## 1.2.0
 
-- Require Orca 1.4.246 and drop the deprecated publisher field
+- Requires Orca 1.4.246 or newer. The plugin page in the Orca directory no longer shows a note about the manifest
 
 ## 1.1.4
 
-- README: link to the plugin's page in the Orca directory
-- CHANGELOG: user-facing notes for 1.1.3
-- Update PlantUML stdlib bundles: archimate, c4, domainstory
+- Updated PlantUML libraries: ArchiMate, C4 and DomainStory
+- The README links to the plugin's page in the Orca directory
 
 ## 1.1.3
 
