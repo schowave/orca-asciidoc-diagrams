@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+
+- Render text at once again; keep diagram heights instead of holding the page
+- Docs: match the code (base-122, 6 MiB, Graphviz, :stem:, diagram links)
+- Keep the scroll position, deactivate diagram links, math only with :stem:
+
 ## 1.2.0
 
 - Require Orca 1.4.246 and drop the deprecated publisher field
