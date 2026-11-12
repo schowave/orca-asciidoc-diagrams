@@ -1,4 +1,4 @@
-// Loads dist/plugin/editor/index.html the way Orca 1.4.245 does: a srcdoc <iframe sandbox="allow-scripts">
+// Loads dist/plugin/editor/index.html the way Orca does (verified on 1.4.245): a srcdoc <iframe sandbox="allow-scripts">
 // whose shell sets the exact plugin CSP, with a mocked window.orca. Fails on CSP violations, page
 // errors or diagrams that did not render.
 import fs from 'node:fs'
@@ -69,6 +69,7 @@ for (const dark of [false, true]) {
       (e) => e.dataset.kind + ': ' + e.textContent.slice(0, 120),
     ),
     scriptsInContent: document.querySelectorAll('#content script').length,
+    katex: document.querySelectorAll('.katex').length, // sample.adoc has no :stem:
     strayBodyElements: Array.from(document.body.children)
       .filter((e) => !['content'].includes(e.id) && !['SCRIPT', 'STYLE', 'META'].includes(e.tagName))
       .map((e) => e.tagName + '#' + e.id),
@@ -90,6 +91,7 @@ for (const dark of [false, true]) {
     r.strayBodyElements.length ||
     r.scriptsInContent ||
     r.pwned ||
+    r.katex ||
     r.applyEdit ||
     live !== 2
   ) {
@@ -118,7 +120,11 @@ for (const dark of [false, true]) {
     const d = Array.from(document.querySelectorAll('.diagram'))
     return {
       sidebar: !!document.querySelector('#content.with-toc-left > .toc-sidebar #toc'),
-      hrefsLeft: document.querySelectorAll('#content a[href]').length,
+      // HTML and SVG links (href or xlink:href), including the one inside a PlantUML diagram
+      hrefsLeft: Array.from(document.querySelectorAll('#content a')).filter(
+        (a) => a.hasAttribute('href') || a.hasAttributeNS('http://www.w3.org/1999/xlink', 'href'),
+      ).length,
+      diagramLink: document.querySelector('.diagram svg a.link-external')?.dataset.href,
       externalTitle: document.querySelector('a.link-external')?.title,
       include: document.querySelector('.unresolved-include')?.textContent.trim(),
       imagePlaceholders: document.querySelectorAll('.image-placeholder').length,
@@ -159,6 +165,7 @@ for (const dark of [false, true]) {
   const ok =
     r.sidebar &&
     r.hrefsLeft === 0 &&
+    r.diagramLink === 'https://example.com/diagram-link' &&
     r.externalTitle === 'https://example.com' &&
     /chapters\/intro\.adoc/.test(r.include || '') &&
     r.imagePlaceholders === 2 &&
@@ -178,7 +185,29 @@ for (const dark of [false, true]) {
     r.scrollY > before + 100 &&
     !r.violations.length &&
     !r.errors.length
-  if (!ok) {
+  // An edit re-renders the page; the reader must stay where they were, also below a changed diagram.
+  // Scroll to the very end: an incomplete page would be shorter there and the browser would clip the position.
+  const scrollBeforeEdit = await frame.evaluate(() => {
+    window.scrollTo(0, document.documentElement.scrollHeight)
+    // Chromium's scroll anchoring may repair the position later; record every intermediate one too.
+    window.__minScrollY = window.scrollY
+    window.addEventListener('scroll', () => (window.__minScrollY = Math.min(window.__minScrollY, window.scrollY)))
+    return window.scrollY
+  })
+  // The edit changes the first diagram, so it is rendered anew while the reader is below it.
+  await frame.evaluate(
+    (t) => window.__setText(t.replace('System(sys, "System")', 'System(sys, "System 2")') + '\nAppended paragraph.\n'),
+    features,
+  )
+  await frame.waitForFunction(
+    () =>
+      /Appended paragraph/.test(document.body.textContent) && document.documentElement.dataset.renderState === 'done',
+    null,
+    { timeout: 30000 },
+  )
+  const scrollAfterEdit = await frame.evaluate(() => Math.min(window.scrollY, window.__minScrollY))
+  console.log('scroll after edit', { before: scrollBeforeEdit, after: scrollAfterEdit })
+  if (!ok || Math.abs(scrollAfterEdit - scrollBeforeEdit) > 2) {
     failed = true
     console.error('✗ features: unexpected result')
   } else console.log('✓ features')

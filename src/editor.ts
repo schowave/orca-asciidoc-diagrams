@@ -1,10 +1,20 @@
 // AsciiDoc preview frame. Runs inside Orca's sandboxed custom-editor iframe:
-// no network, no eval, no wasm, no file system. mermaid, PlantUML and the bundled PlantUML stdlib
-// libraries are embedded compressed and loaded on first use (src/payloads.ts).
-import { load, Extensions } from '@asciidoctor/core'
+// no network, no eval, no wasm, no file system. The engines (PlantUML and its bundled stdlib libraries,
+// Mermaid, Graphviz, highlight.js, KaTeX) are embedded compressed and loaded on first use (src/payloads.ts).
+// The AsciiDoc conversion is in src/convert.ts, the pure helpers in src/text.ts.
 import DOMPurify from 'dompurify'
+import { convertAdoc } from './convert'
 import { loadPayload, payloadIds } from './payloads'
-import { escapeHtml, notBundledMessage, unbundledStdlib } from './text'
+import {
+  anchorId,
+  diagramKey,
+  escapeHtml,
+  notBundledMessage,
+  splitMath,
+  unbundledStdlib,
+  wrapPlantUml,
+  type Diagram,
+} from './text'
 
 declare const mermaid: any
 declare const PlantUML: {
@@ -12,51 +22,9 @@ declare const PlantUML: {
 }
 declare const orca: any
 
-type Kind = 'plantuml' | 'mermaid' | 'graphviz'
 type Doc = { version: number; content: { kind: 'text'; text: string } }
 
 const w = window as any
-
-// ---------------------------------------------------------------------------------------------
-// AsciiDoc extensions
-
-// [plantuml] / [mermaid] blocks become placeholders with an index into `sources`.
-// The source stays out of the HTML: DOMPurify drops attributes that contain "-->", common in diagrams.
-let sources: string[] = []
-let layouts: (string | undefined)[] = [] // graphviz `layout=` attribute per diagram
-const registry = Extensions.create()
-for (const kind of ['plantuml', 'mermaid', 'graphviz'] as Kind[]) {
-  registry.block(function (this: any) {
-    this.named(kind)
-    this.onContexts('listing', 'literal', 'open', 'paragraph')
-    this.parseContentAs('raw')
-    this.process(function (this: any, parent: any, reader: any, attrs: any) {
-      // The reader holds only this block's raw content; readLines() is async in asciidoctor 4.
-      const src: string = reader.getLines().join('\n')
-      const title = attrs.title ? `<div class="title">${escapeHtml(attrs.title)}</div>` : ''
-      const html =
-        `<div class="diagramblock" data-kind="${kind}">` +
-        `<div class="diagram" data-kind="${kind}" data-idx="${sources.push(src) - 1}"></div>${title}</div>`
-      layouts[sources.length - 1] = attrs.layout
-      return this.createPassBlock(parent, html, {})
-    })
-  })
-}
-
-// The frame has no file system: every include:: becomes a visible placeholder.
-registry.includeProcessor(function (this: any) {
-  this.handles(() => true)
-  this.process(function (_doc: any, reader: any, target: string, attrs: any) {
-    const shown = target.replace(/[+`]/g, '')
-    reader.pushInclude(
-      ['[.unresolved-include]', '****', `Include not resolvable in the preview: \`+${shown}+\``, '****'],
-      target,
-      target,
-      1,
-      attrs,
-    )
-  })
-})
 
 // ---------------------------------------------------------------------------------------------
 // PlantUML stdlib: bundled libraries are decompressed and run only when a diagram includes them.
@@ -84,7 +52,6 @@ w.PLANTUML_STDLIB_LOADER = (url: string, ok: () => void, err: (msg: string) => v
 // Diagrams
 
 const root = document.getElementById('content')!
-const cache = new Map<string, Promise<string>>()
 let mermaidSeq = 0
 
 const isDark = () => document.documentElement.classList.contains('dark')
@@ -93,9 +60,8 @@ async function renderPlantUml(src: string): Promise<string> {
   const missing = unbundledStdlib(src, BUNDLED_STDLIB)
   if (missing) return Promise.reject(new Error(notBundled(missing)))
   await loadPayload('plantuml')
-  const text = /^\s*@start/.test(src) ? src : `@startuml\n${src}\n@enduml`
   return new Promise((resolve, reject) =>
-    PlantUML.renderToString(text.split('\n'), resolve, (msg) => reject(new Error(msg))),
+    PlantUML.renderToString(wrapPlantUml(src).split('\n'), resolve, (msg) => reject(new Error(msg))),
   )
 }
 
@@ -134,35 +100,44 @@ async function renderGraphviz(src: string, layout = 'dot'): Promise<string> {
   }
 }
 
-function renderDiagram(kind: Kind, src: string, layout?: string): Promise<string> {
-  const key = `${kind}:${kind === 'mermaid' && isDark() ? 'dark' : 'light'}:${layout ?? ''}:${src}`
-  let p = cache.get(key)
-  if (!p) {
-    p =
-      kind === 'plantuml' ? renderPlantUml(src) : kind === 'mermaid' ? renderMermaid(src) : renderGraphviz(src, layout)
-    cache.set(key, p) // failures are cached too: the same source fails the same way
-    p.catch(() => {})
-  }
-  return p
+function renderDiagram({ kind, src, layout }: Diagram): Promise<string> {
+  if (kind === 'plantuml') return renderPlantUml(src)
+  if (kind === 'mermaid') return renderMermaid(src)
+  return renderGraphviz(src, layout)
 }
 
-async function renderDiagrams(gen: number) {
-  for (const el of Array.from(root.querySelectorAll<HTMLElement>('.diagram'))) {
-    const kind = el.dataset.kind as Kind
-    const src = sources[Number(el.dataset.idx)] ?? ''
+// Rendered SVGs by diagramKey. Failures are cached too: the same source fails the same way.
+// After each completed render only the diagrams of the current document stay.
+let cache = new Map<string, Promise<string>>()
+
+async function renderDiagrams(container: HTMLElement, diagrams: Diagram[], isCurrent: () => boolean) {
+  const kept = new Map<string, Promise<string>>()
+  for (const el of Array.from(container.querySelectorAll<HTMLElement>('.diagram'))) {
+    const diagram = diagrams[Number(el.dataset.idx)]
+    if (!diagram) continue
+    const key = diagramKey(diagram, isDark())
+    let p = cache.get(key)
+    if (!p) {
+      p = renderDiagram(diagram)
+      p.catch(() => {})
+      cache.set(key, p)
+    }
+    kept.set(key, p)
     try {
-      const svg = await renderDiagram(kind, src, layouts[Number(el.dataset.idx)])
-      if (gen !== generation) return
+      const svg = await p
+      if (!isCurrent()) return
       el.innerHTML = svg
       el.classList.add('rendered')
+      rewriteLinks(el) // links in diagrams (PlantUML [[url]], Graphviz URL=) are links too
     } catch (e) {
-      if (gen !== generation) return
+      if (!isCurrent()) return
       el.classList.add('failed')
       el.innerHTML =
-        `<div class="diagram-error"><strong>${kind} error:</strong> ${escapeHtml(String((e as Error)?.message ?? e))}</div>` +
-        `<pre>${escapeHtml(src)}</pre>`
+        `<div class="diagram-error"><strong>${diagram.kind} error:</strong> ${escapeHtml(String((e as Error)?.message ?? e))}</div>` +
+        `<pre>${escapeHtml(diagram.src)}</pre>`
     }
   }
+  cache = kept
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -170,18 +145,22 @@ async function renderDiagrams(gen: number) {
 
 // Orca's frame shell cancels every click on <a href>. Move href to data-href and handle clicks
 // ourselves: in-document anchors scroll, everything else only shows its target as a tooltip.
+const XLINK = 'http://www.w3.org/1999/xlink'
+
 function rewriteLinks(container: HTMLElement) {
-  for (const a of Array.from(container.querySelectorAll<HTMLAnchorElement>('a[href]'))) {
-    const href = a.getAttribute('href')!
+  for (const a of Array.from(container.querySelectorAll<HTMLElement | SVGAElement>('a'))) {
+    const href = a.getAttribute('href') ?? a.getAttributeNS(XLINK, 'href')
+    if (href === null) continue
     const internal = href.startsWith('#')
     a.removeAttribute('href')
+    a.removeAttributeNS(XLINK, 'href')
     a.dataset.href = href
     a.classList.add(internal ? 'link-internal' : 'link-external')
     if (internal) {
       a.setAttribute('role', 'link')
       a.tabIndex = 0
-    } else if (!a.title) {
-      a.title = href
+    } else if (!a.hasAttribute('title')) {
+      a.setAttribute('title', href) // a tooltip in HTML; harmless in SVG
     }
   }
 }
@@ -189,7 +168,7 @@ function rewriteLinks(container: HTMLElement) {
 function followInternalLink(target: EventTarget | null) {
   const a = (target as Element | null)?.closest?.('a.link-internal') as HTMLElement | null
   if (!a) return false
-  const id = decodeURIComponent(a.dataset.href!.slice(1))
+  const id = anchorId(a.dataset.href!)
   const dest = id ? document.getElementById(id) : null
   ;(dest ?? document.body).scrollIntoView({ block: 'start' })
   return true
@@ -226,10 +205,7 @@ async function highlightCode(container: HTMLElement) {
   }
 }
 
-// :stem: — Asciidoctor leaves the math for a client-side renderer: \$…\$ (asciimath), \(…\) (latexmath)
-// inline, and \$…\$ / \[…\] inside .stemblock for blocks. KaTeX renders them, loaded on first use.
-const MATH = /\\\$([\s\S]+?)\\\$|\\\(([\s\S]+?)\\\)|\\\[([\s\S]+?)\\\]/g
-
+// :stem: math, rendered by KaTeX, which is loaded on first use. splitMath (src/text.ts) finds the formulas.
 async function renderMath(container: HTMLElement) {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
     acceptNode: (n) =>
@@ -243,23 +219,12 @@ async function renderMath(container: HTMLElement) {
   await loadPayload('katex')
   const math = w.adocMath
   for (const node of nodes) {
-    const text = node.nodeValue ?? ''
-    const display = !!node.parentElement?.closest('.stemblock')
-    let html = ''
-    let last = 0
-    for (const m of text.matchAll(MATH)) {
-      html += escapeHtml(text.slice(last, m.index))
-      const [, ascii, latexInline, latexBlock] = m
-      html +=
-        ascii !== undefined
-          ? math.render(ascii, display, 'asciimath')
-          : math.render(latexInline ?? latexBlock, display || latexBlock !== undefined, 'latexmath')
-      last = m.index! + m[0].length
-    }
-    if (!last) continue
-    html += escapeHtml(text.slice(last))
+    const parts = splitMath(node.nodeValue ?? '', !!node.parentElement?.closest('.stemblock'))
+    if (!parts) continue
     const span = document.createElement('span')
-    span.innerHTML = html
+    span.innerHTML = parts
+      .map((p) => (typeof p === 'string' ? escapeHtml(p) : math.render(p.tex, p.display, p.notation)))
+      .join('')
     node.replaceWith(...Array.from(span.childNodes))
   }
 }
@@ -282,35 +247,42 @@ function layoutToc(container: HTMLElement, position: string | undefined) {
 // Rendering
 
 let generation = 0
+
+// The first render fills the page as diagrams arrive. Later renders (edits, theme changes) build the
+// new page off-screen and swap it in complete, so the page keeps its height and the scroll position holds.
 async function render(text: string) {
   const gen = ++generation
-  document.documentElement.dataset.renderState = 'rendering'
-  sources = []
-  layouts = []
-  const doc = await load(text, {
-    safe: 'secure',
-    extension_registry: registry,
-    // highlight.js is the only highlighter that works here (client-side, see highlightCode).
-    attributes: { showtitle: true, 'source-highlighter': 'highlight.js' },
-  })
-  const html = (await doc.convert()) as string
-  if (gen !== generation) return
-  const tocPosition = doc.getAttribute('toc-position') as string | undefined
+  const isCurrent = () => gen === generation
+  try {
+    document.documentElement.dataset.renderState = 'rendering'
+    const { html, diagrams, tocPosition, stem } = await convertAdoc(text)
+    if (!isCurrent()) return
 
-  const fragment = document.createElement('div')
-  fragment.innerHTML = DOMPurify.sanitize(html)
-  rewriteLinks(fragment)
-  replaceImages(fragment)
-  layoutToc(fragment, tocPosition)
+    const fragment = document.createElement('div')
+    fragment.innerHTML = DOMPurify.sanitize(html)
+    rewriteLinks(fragment)
+    replaceImages(fragment)
+    layoutToc(fragment, tocPosition)
 
+    const progressive = !root.hasChildNodes()
+    const target = progressive ? root : fragment
+    if (progressive) show(fragment)
+    await Promise.all([highlightCode(target), stem && renderMath(target)])
+    if (!isCurrent()) return
+    await renderDiagrams(target, diagrams, isCurrent)
+    if (!isCurrent()) return
+    if (!progressive) show(fragment)
+    document.documentElement.dataset.renderState = 'done'
+  } catch (e) {
+    if (isCurrent()) showFatal(e) // an older render's failure must not replace a newer page
+  }
+}
+
+function show(fragment: HTMLElement) {
   const scrollY = window.scrollY
   root.className = fragment.className
   root.replaceChildren(...Array.from(fragment.childNodes))
   window.scrollTo(0, scrollY)
-  await Promise.all([highlightCode(root), renderMath(root)])
-  if (gen !== generation) return
-  await renderDiagrams(gen)
-  if (gen === generation) document.documentElement.dataset.renderState = 'done'
 }
 
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -320,7 +292,7 @@ function schedule(doc: Doc) {
   if (doc.version === lastVersion) return
   lastVersion = doc.version
   clearTimeout(timer)
-  timer = setTimeout(() => render(doc.content.text).catch(showFatal), 250)
+  timer = setTimeout(() => render(doc.content.text), 250)
 }
 
 function showFatal(e: unknown) {
@@ -331,11 +303,11 @@ function showFatal(e: unknown) {
 async function main() {
   const doc: Doc = await orca.document.get()
   lastVersion = doc.version
-  render(doc.content.text).catch(showFatal)
+  void render(doc.content.text)
   orca.document.onDidChange((d: Doc) => schedule(d))
   orca.on('theme', () => {
     // Mermaid colors depend on the theme; re-render with the current text.
-    orca.document.get().then((d: Doc) => render(d.content.text).catch(showFatal))
+    orca.document.get().then((d: Doc) => render(d.content.text), showFatal)
   })
 }
 

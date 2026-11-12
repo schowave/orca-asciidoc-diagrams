@@ -58,6 +58,10 @@ graph TD
 Alice -> Bob : shown as code
 ----
 
+== No math without :stem:
+
+This document has no `:stem:`, so \(x^2\) and \$y\$ stay text.
+
 == Passthrough
 
 ++++
