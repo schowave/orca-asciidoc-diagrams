@@ -27,15 +27,15 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
 
 - **Opening files:**
   - `contributes.customEditors` for `.adoc`, `.asciidoc` and `.asc`
-  - `priority: "default"`, `contentKind: "text"`
+  - `priority: "default"`; `contentKind` stays at its default, `text`
 - **Read-only:**
   - Editing happens in Orca's Source view (view toggle)
   - The plugin never calls `orca.document.applyEdit`
 - **Live updates:** `orca.document.onDidChange` triggers a re-render, including on unsaved changes
   - Debounced by about 250 ms
   - Versions already rendered are skipped
-  - The scroll position is preserved
-  - Diagrams are cached by source; failures are cached too
+  - The scroll position is preserved: after the first render, a new page is built off-screen (code, math, diagrams) and swapped in complete, so its height never collapses while a changed diagram renders
+  - Diagrams are cached by source; failures are cached too. After each render only the current document's diagrams stay cached
 - **AsciiDoc:** asciidoctor.js 4 in `safe: secure` mode
 - **Diagrams:** asciidoctor-diagram block syntax, `----` delimited, with optional title and attributes. `[source,<lang>]` stays code.
   - `[plantuml]`:
@@ -51,14 +51,14 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
   - Others produce a clear "library not bundled" error
   - Excluded:
     - `gcp`, `elastic`, `edgy`: no declared license
-    - `awslib14`: about 3 MiB, too large for the default build
+    - `awslib14`: about 2.7 MiB, more than doubles the stdlib share of the page; available through a custom build
   - **Custom builds:** `PLANTUML_STDLIB=a,b` overrides `scripts/stdlib-list.mjs` for `fetch-stdlib.mjs` and `build.mjs`
   - **Not committed:** the catalog rejects archives (v1.1.0 was refused for the vendored `.gz` files). `fetch-stdlib.mjs` downloads the libraries into the gitignored `vendor/plantuml-stdlib/`. `vendor/plantuml-stdlib.lock.json` pins their SHA-256; on a mismatch the script warns, and `--update` pins the new upstream version. The release workflow runs it with `--update` and releases when the lock changes
 - **Syntax highlighting:**
   - highlight.js with its common languages, applied to `pre.highlight > code[data-lang]`
   - Asciidoctor runs with `source-highlighter=highlight.js`
   - GitHub light and dark themes, scoped to `html.dark`
-- **Math (`:stem:`):**
+- **Math (`:stem:`):** only when the document sets `:stem:`, as in Asciidoctor; without it the delimiters stay text
   - KaTeX, with its woff2 fonts inlined as `data:` URIs
   - asciimath goes through asciimath2tex first
   - Delimiters as Asciidoctor emits them: `\$…\$` (asciimath), `\(…\)` and `\[…\]` (latexmath)
@@ -72,7 +72,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
   - Table cells are left-aligned and respect the `halign-*`/`valign-*` classes
 - **TOC:** only with `:toc:`. `toc: left`/`right` renders a sticky sidebar, which stacks on narrow widths.
 - **Links:**
-  - Orca's frame shell cancels every click on `<a href>`. So `href` moves to `data-href`:
+  - Orca's frame shell cancels every click on `<a href>`. So `href` moves to `data-href`, in the HTML and in rendered diagram SVGs (PlantUML `[[url]]`, Graphviz `URL=`, also `xlink:href`):
     - Internal anchors (`<<id>>`, TOC) scroll to their target, by click or Enter
     - External links and `xref:` to other files show their target as a tooltip only
 - **Not in scope:** zoom, fullscreen and export
@@ -94,7 +94,7 @@ The frame has no file system, no network and no wasm.
 | PlantUML `!include` of local files | Unsupported |
 | Libraries | Cannot be installed at runtime: the frame has no storage, and frames of different plugins cannot talk to each other. A future Orca frame↔worker channel (stablyai/orca#36429, panels only so far) could change that |
 
-## Platform constraints (verified against Orca 1.4.245)
+## Platform constraints (verified against Orca 1.4.245; the manifest requires 1.4.246 only for the `publisher` field)
 
 - **Frame:** `<iframe sandbox="allow-scripts">` (srcdoc) with this CSP:
   `default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'`
@@ -121,7 +121,7 @@ The frame has no file system, no network and no wasm.
 
 ## Architecture
 
-- **`editor/index.html`:** one self-contained file of about **7 MiB**. Its contents:
+- **`editor/index.html`:** one self-contained file of about **6 MiB**. Its contents:
   - Inline CSS and `<div id="content">`
   - Inert `<script type="application/x-payload" data-payload="…" data-length="…">` blocks holding compressed code, encoded as base-122 text (`src/base122.ts`): about 14 % overhead instead of base64's 33 %. The variant avoids NUL, CR and `<`, which the HTML parser would change or which could end the script element
   - The only uncompressed script, `src/bootstrap.ts`
@@ -160,11 +160,13 @@ The frame has no file system, no network and no wasm.
     - Missing or wrongly failed diagrams
     - Highlighting, math or Graphviz not rendered
     - Overflowing or upscaled diagrams
-    - A broken link scroll
+    - A broken link scroll, or a link left active (also inside a diagram)
+    - Math rendered without `:stem:`
+    - A scroll position lost while a changed diagram re-renders
     - A script surviving sanitization, or a call to `applyEdit`
 - **Media:** `scripts/media.mjs` generates the icon, cover, screenshots and demo GIF from the real build in the same replica frame.
 - **Tooling:**
-  - `mise.toml` pins Node and defines the tasks (`setup`, `test`, `build`, `media`, `fetch-stdlib`)
+  - `mise.toml` pins Node and defines the tasks (`setup`, `check`, `check-deep`, `test`, `build`, `media`, `fetch-stdlib`)
   - `mise.lock` holds checksums for all platforms
   - CI uses `jdx/mise-action`
 - **Dependencies:** Renovate (GitHub App) covers npm, mise and GitHub Actions
@@ -204,6 +206,6 @@ The frame has no file system, no network and no wasm.
 | Stdlib | A broad default set (licensed libraries only); custom selection via `PLANTUML_STDLIB` for anything else, e.g. AWS |
 | Unresolvable content | `include::` and images become placeholders; no local preview server |
 | Security | Sanitize everything; never write to the document |
-| Size | Compress the embedded code (A + B); no base122 encoding, no trimming of tupadr3 |
+| Size | Compress the embedded code (brotli) and encode it as base-122 text (ADR 0003); no trimming of tupadr3 |
 | Extra formats | Syntax highlighting, KaTeX math and Graphviz. WaveDrom, Nomnoml, Bytefield and BPMN only on request. D2, Svgbob, Pikchr, BlockDiag, Structurizr and Vega are impossible in the sandbox |
 | Maintenance | Renovate with automerge for patch and minor updates; weekly automatic patch releases through the community catalog |

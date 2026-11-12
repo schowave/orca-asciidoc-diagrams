@@ -13,11 +13,11 @@ _Avoid_: window, webview, sandbox (the sandbox is the frame's property)
 _Avoid_: bundle (a bundle is one part inside it), output
 
 **Payload**:
-A compressed, base64-encoded script embedded in the entry in an inert `<script type="application/x-payload">` block and executed on first use (`src/payloads.ts`). The PlantUML engine, Mermaid, Graphviz, highlight.js, KaTeX and each stdlib bundle are payloads.
+A compressed script (brotli; gzip for the app payload), encoded as base-122 text (`src/base122.ts`), embedded in the entry in an inert `<script type="application/x-payload">` block and executed on first use (`src/payloads.ts`). The PlantUML engine, Mermaid, Graphviz, highlight.js, KaTeX and each stdlib bundle are payloads.
 _Avoid_: chunk, lazy module
 
 **Bootstrap**:
-The only uncompressed script in the entry (`src/bootstrap.ts`). It inflates the gzip-compressed app payload and runs it.
+The only uncompressed script in the entry (`src/bootstrap.ts`). It decodes the app payload (base-122 text, gzip-compressed) and runs it.
 
 **Stdlib bundle**:
 One PlantUML standard library (for example `c4`, `azure`) downloaded by `scripts/fetch-stdlib.mjs`, pinned by SHA-256 in `vendor/plantuml-stdlib.lock.json` and embedded as a payload. The list is in `scripts/stdlib-list.mjs`.
@@ -27,7 +27,7 @@ _Avoid_: library pack, include set
 A PlantUML `!include <lib/...>` for a library that is not a stdlib bundle. The preview shows an error box naming the bundled libraries instead of PlantUML's generic message.
 
 **Diagram block**:
-A `[plantuml]`, `[mermaid]` or `[graphviz]` block in the AsciiDoc source, written the asciidoctor-diagram way. It becomes a placeholder first and is rendered afterwards.
+A `[plantuml]`, `[mermaid]` or `[graphviz]` block in the AsciiDoc source, written the asciidoctor-diagram way. `src/convert.ts` turns it into a placeholder with an index into the list of diagram sources; `src/editor.ts` renders it afterwards.
 _Avoid_: diagram macro
 
 **Placeholder**:

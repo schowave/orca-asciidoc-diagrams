@@ -1,4 +1,4 @@
-// Reproduces how Orca 1.4.245 hosts a custom editor: a srcdoc <iframe sandbox="allow-scripts"> whose
+// Reproduces how Orca (verified on 1.4.245) hosts a custom editor: a srcdoc <iframe sandbox="allow-scripts"> whose
 // shell sets the exact plugin CSP, cancels clicks on <a href>, and provides window.orca (mocked here).
 // Used by the tests and by scripts/media.mjs.
 import fs from 'node:fs'

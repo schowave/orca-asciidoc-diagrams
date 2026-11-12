@@ -34,14 +34,14 @@ Work in a git worktree of your own, not in the main checkout. In a new worktree 
 
 ## Layout
 
-- `src/`: the preview that runs in the frame. `bootstrap.ts` starts it, `editor.ts` renders (DOM), `text.ts` holds the pure helpers, `payloads.ts` loads the lazy compressed engines (decision: `docs/adr/0002-single-file-bundle-for-orca-frame.md`).
+- `src/`: the preview that runs in the frame. `bootstrap.ts` starts it, `convert.ts` turns AsciiDoc into HTML plus diagram sources (no DOM), `editor.ts` renders (DOM), `text.ts` holds the pure helpers, `payloads.ts` loads the lazy compressed engines and `base122.ts` decodes them (decision: `docs/adr/0002-single-file-bundle-for-orca-frame.md`).
 - `scripts/`: build (`build.mjs`), stdlib download and lock (`fetch-stdlib.mjs`, `stdlib-lock.mjs`), release and stats scripts. `tests/unit/`: unit tests. `tests/`: browser harness and fixtures.
 - Generated, do not edit: `editor/index.html`, `dist/`, `vendor/plantuml-stdlib/` (a gitignored download cache), `vendor/plantuml-stdlib.lock.json`.
 
 ## Conventions
 
 - Code style is Prettier's (no semicolons, single quotes, 120 columns) and ESLint's: camelCase for variables and functions (UPPER_CASE for constants, PascalCase for types and the engine globals `PlantUML` and `Viz`), complexity at most 11, files under 500 lines.
-- Tests are `*.test.ts` in `tests/unit/` and use `node:test`. They import from `src/text.ts` and `scripts/`. Put logic you want to test in a module without DOM or bundler imports, as `src/text.ts` does; `src/editor.ts` needs the DOM and is covered by the browser harness.
+- Tests are `*.test.ts` in `tests/unit/` and use `node:test`. They import from `src/text.ts`, `src/convert.ts`, `src/base122.ts` and `scripts/`. Put logic you want to test in a module without DOM or bundler imports, as `src/text.ts` does; `src/editor.ts` needs the DOM and is covered by the browser harness.
 - TODO and FIXME carry an author and a link: `// TODO(name): … https://…` (enforced by `npm run todo:check`).
 - The frame has no network, no `eval`, no WebAssembly. Do not add code that needs them. Everything lazy-loaded goes through `src/payloads.ts`.
 - `editor/index.html` and `dist/` are build output. Do not edit them; the weekly release workflow rebuilds and commits `editor/index.html`.
