@@ -106,6 +106,12 @@ graph LR
   Order --> Payment
 ----
 
+[[fig-low]]
+[plantuml, height=60]
+----
+A -> B : low
+----
+
 .Deployment
 plantuml::diagrams/deploy.puml[]
 

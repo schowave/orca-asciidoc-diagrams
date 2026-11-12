@@ -151,16 +151,21 @@ function fill(el: HTMLElement, diagram: Diagram, outcome: Outcome) {
 
 // `width=` / `height=` on the block (checked CSS lengths from convert.ts). Like an image in Asciidoctor, this may
 // scale a diagram up; the column width still caps it (max-width), which also overrides Mermaid's inline max-width.
+// The height always follows from the width, so the box never has empty space: a pixel `height=` becomes the width
+// that gives that height, `width=` wins when both are set, and a `%` height (no reference height in the flow) is ignored.
 function applySize(el: HTMLElement) {
   const svg = el.querySelector<SVGSVGElement>(':scope > svg')
-  const { width, height } = el.dataset
-  if (!svg || (!width && !height)) return
+  const width = el.dataset.width ?? widthForHeight(svg, el.dataset.height)
+  if (!svg || !width) return
   svg.style.maxWidth = '100%'
-  if (width) svg.style.width = width
-  if (height) {
-    svg.style.setProperty('height', height, 'important')
-    if (!width) svg.style.width = 'auto'
-  }
+  svg.style.width = width
+}
+
+function widthForHeight(svg: SVGSVGElement | null, height: string | undefined): string | undefined {
+  const px = height?.endsWith('px') ? parseFloat(height) : NaN
+  const vb = svg?.viewBox?.baseVal
+  if (!px || !vb?.width || !vb.height) return undefined
+  return `${(px * vb.width) / vb.height}px`
 }
 
 type Pending = { el: HTMLElement; diagram: Diagram; entry: Entry }

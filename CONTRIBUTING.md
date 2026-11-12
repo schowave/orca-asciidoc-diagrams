@@ -22,7 +22,7 @@ mise tasks             # list all tasks
 
 | Path | Content |
 |---|---|
-| `src/` | The preview: `bootstrap.ts` (startup), `convert.ts` (AsciiDoc to HTML), `editor.ts` (rendering), `text.ts` (pure helpers), `payloads.ts` and `base122.ts` (lazy brotli payloads), `payloads/` (highlight.js and KaTeX entries), `editor.css` |
+| `src/` | The preview: `bootstrap.ts` (startup), `convert.ts` (AsciiDoc to HTML), `editor.ts` (rendering), `diagram-tools.ts` and `zoom.ts` (diagram toolbar and zoom overlay), `text.ts` (pure helpers), `payloads.ts` and `base122.ts` (lazy brotli payloads), `payloads/` (highlight.js and KaTeX entries), `editor.css` |
 | `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
 | `tests/unit/` | Unit tests (`*.test.ts`, run by `node --test`) for `src/text.ts`, `src/convert.ts`, `src/base122.ts` and `scripts/` |
 | `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |

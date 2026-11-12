@@ -48,7 +48,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
   - **Figures**, as in asciidoctor-diagram:
     - A titled diagram gets a caption number (`:figure-caption:`, default `Figure`) from the counter it shares with images; `caption=` overrides it and `:figure-caption!:` turns it off
     - The block id (`[[id]]`, `[#id]`, `id=`) is on the figure, so a cross reference scrolls to it
-    - `width=` and `height=` (a number is pixels; `px` and `%`) set the display size, which may scale a diagram up but never beyond the column; `align=` (`left`, `center`, `right`) and `role=` work as on images
+    - `width=` and `height=` (a number is pixels; `px` and `%`) set the display size, which may scale a diagram up but never beyond the column. The height always follows from the width, so the box has no empty space: a pixel height becomes the matching width, `width=` wins when both are set, and a `%` height is ignored; `align=` (`left`, `center`, `right`) and `role=` work as on images
     - The positional `target` and `format` attributes are ignored: the preview always renders SVG
     - Block macros (`plantuml::file[]`, `mermaid::`, `graphviz::`) read a file, which the frame cannot: they show a placeholder that keeps the title, number and id
     - The caption is assigned while parsing; the HTML is written after `load()`, once titles have their substitutions
@@ -201,7 +201,7 @@ The frame has no file system, no network and no wasm.
   - Do not bundle its `viz-global.js`: under the CSP its wasm init fails and breaks graph diagrams instead of falling back to Smetana
 - **Mermaid:**
   - On parse errors it appends an error SVG to `<body>` unless `suppressErrorRendering` is set
-  - Its inline `max-width` must stay in force, or small diagrams are scaled up
+  - Its inline `max-width` must stay in force, or small diagrams are scaled up. Only a block's `width=` or `height=` replaces it (with `max-width: 100%`), because those may scale a diagram up
 - **highlight.js themes:** strip CSS comments before scoping selectors to light/dark, or the leading rule escapes the scope.
 - **Orca development folders:**
   - Overwrite the build in place, never delete the folder, or Orca's watcher loses it

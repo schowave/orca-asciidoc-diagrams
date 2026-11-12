@@ -185,6 +185,13 @@ async function openFeatures() {
       width: Math.round(block?.querySelector('.diagram > svg')?.getBoundingClientRect().width ?? 0),
       align: block && getComputedStyle(block.querySelector('.diagram')).textAlign,
       macro: macro?.textContent,
+      // height= alone: the box is exactly that high, with no empty space beside or below the drawing
+      low: (() => {
+        const svg = document.querySelector('#fig-low .diagram > svg')
+        const box = svg?.getBoundingClientRect()
+        const vb = svg?.viewBox.baseVal
+        return box && vb && [Math.round(box.height), Math.round((box.width * vb.height) / vb.width)]
+      })(),
     }
   })
   console.log('figures', JSON.stringify(fig))
@@ -193,6 +200,8 @@ async function openFeatures() {
     /^Figure \d+\. Order flow$/.test(fig.title ?? '') &&
     Math.abs(fig.width - 480) <= 1 &&
     fig.align === 'center' &&
+    fig.low?.[0] === 60 &&
+    Math.abs(fig.low[1] - 60) <= 1 &&
     /diagrams\/deploy\.puml/.test(fig.macro ?? '') &&
     /^Figure \d+\. Deployment/.test(fig.macro?.split('puml').pop() ?? '')
   console.log('features', JSON.stringify({ ...r, notBundled: r.notBundled.slice(0, 200), before }, null, 1))
@@ -295,6 +304,12 @@ async function openFeatures() {
   check((await overlay())?.svg, 'a double click opens the zoom')
   await frame.click('.zoom-bar button[data-action="close"]')
   check(!(await overlay()), 'the close button closes the zoom')
+  const stray = await frame.evaluate(() =>
+    Array.from(document.body.children)
+      .filter((e) => e.id !== 'content' && !['SCRIPT', 'STYLE', 'META'].includes(e.tagName))
+      .map((e) => e.tagName + '.' + e.className),
+  )
+  check(!stray.length, `nothing is left outside #content after zooming: ${stray}`)
 
   await frame.evaluate(() => {
     window.__copyResult = true
