@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping. Bug reports, diagram examples that render wrongly and pull requests are all welcome.
+Thanks for helping. Bug reports, diagram examples that render wrongly and pull requests are all welcome. Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Reporting a problem
 
