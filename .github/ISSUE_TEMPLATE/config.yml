@@ -4,5 +4,5 @@ contact_links:
     url: https://github.com/schowave/orca-asciidoc-diagrams/security/advisories/new
     about: A document that escapes the sandbox, runs scripts or writes files.
   - name: Plugin page in the Orca directory
-    url: https://www.onorca.dev/plugins/schowave/orca-asciidoc-diagrams
+    url: https://orca.dev/plugins/schowave/orca-asciidoc-diagrams
     about: Install, screenshots and versions.

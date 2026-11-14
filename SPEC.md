@@ -19,7 +19,7 @@ An Orca plugin that renders AsciiDoc files as easily as possible, with inline di
   - `images/`, `LICENSE`, `THIRD_PARTY_NOTICES.md`
   - `dist/plugin` mirrors only these files, for Orca's development folders
 - **Distribution:**
-  - **Community catalog / onorca.dev:** it is generated automatically from the topic plus the newest `vX.Y.Z` tag, pinned to that commit and its content hash. There is no PR. Orca auto-updates a release once it has been listed for 12 h. A size review may hold large plugins.
+  - **Community catalog / orca.dev:** it is generated automatically from the topic plus the newest `vX.Y.Z` tag, pinned to that commit and its content hash. There is no PR. Orca auto-updates a release once it has been listed for 12 h. A size review may hold large plugins.
   - **Git URL install:** `https://github.com/schowave/orca-asciidoc-diagrams#vX.Y.Z`. Orca requires an explicit `#ref` (a tag or a commit); such installs are shown as *Unverified*.
 - **Relation to `Mbirepinte/Orca-asciidoc-viewer`:** independent of it. That plugin has no diagram support; diagrams are the distinguishing feature here.
 
