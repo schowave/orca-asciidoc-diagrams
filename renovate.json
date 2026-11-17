@@ -12,9 +12,9 @@
       "automerge": true
     },
     {
-      "description": "Major updates wait for a human: CI cannot see visual changes in rendered diagrams",
+      "description": "Major updates in their own PRs, merged by themselves once CI is green (CI cannot see visual changes in rendered diagrams)",
       "matchUpdateTypes": ["major"],
-      "automerge": false,
+      "automerge": true,
       "labels": ["major-update"]
     }
   ],
