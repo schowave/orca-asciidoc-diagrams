@@ -28,8 +28,15 @@ workflows, so CI would never run on such a commit by itself.
 - If `main` moves while CI runs (for example a Renovate merge), the fast-forward fails. The build is then stale, so
   the workflow dispatches itself again to build from the new `main`, up to three attempts.
 - The release branch is deleted afterwards, and a leftover one is overwritten by the next run.
-- The publish job pushes the patch only if it changes nothing but the release files, and CI on a release branch
-  checks that the committed `editor/index.html` equals the bundle it built and tested.
+- The publish job accepts the patch only as exactly one commit that changes nothing but `RELEASE_PATHS` (renames
+  counted as deletions), with `package.json`, `package-lock.json` and `orca-plugin.json` changed only in their
+  version, and a version that matches the manifest. CI on a release branch checks that the committed
+  `editor/index.html` equals the bundle it built and tested.
+- `main` and the tag are pushed together (`git push --atomic`), so `main` never names a version without a tag. If
+  only the GitHub release fails after that, the plugin is released (the catalog reads the tag) and the release
+  page is created by hand.
+- This guards against a build job that was tampered with, not against a compromised dependency in CI itself: CI
+  runs the same dependencies.
 - Only one run can wait in the `release` concurrency group: a manual dispatch made while a restart is pending (or
   the other way round) replaces it. Rare, and a later run releases the same changes.
 - Push triggers do not fire for the release commit on `main`, so `publish` dispatches CodeQL and Scorecard for it.

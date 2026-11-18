@@ -23,6 +23,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # The files a release commit changes: the build job commits them, the publish job accepts nothing else.
+  RELEASE_PATHS: >-
+    editor/index.html vendor/plantuml-stdlib.lock.json images orca-plugin.json package.json package-lock.json
+    CHANGELOG.md README.md docs/agent-stats.md
+
 concurrency:
   group: release
   cancel-in-progress: false
@@ -59,7 +65,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add editor/index.html vendor/plantuml-stdlib.lock.json images orca-plugin.json package.json package-lock.json CHANGELOG.md README.md docs/agent-stats.md
+          read -ra paths <<< "$RELEASE_PATHS"
+          git add -- "${paths[@]}"
           git commit -m "Release v$VERSION"
           mkdir -p "$RUNNER_TEMP/release"
           git format-patch -1 --binary --stdout > "$RUNNER_TEMP/release/release.patch"
@@ -83,9 +90,6 @@ jobs:
     env:
       VERSION: ${{ needs.build.outputs.version }}
       GH_TOKEN: ${{ github.token }}
-      # What the build job commits (see its `git add`), as one extended regular expression.
-      RELEASE_FILES: >-
-        editor/index\.html|vendor/plantuml-stdlib\.lock\.json|images/.*|orca-plugin\.json|package\.json|package-lock\.json|CHANGELOG\.md|README\.md|docs/agent-stats\.md
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -97,62 +101,80 @@ jobs:
       # main only accepts commits with a green `test` check from GitHub Actions (ruleset "main: CI required").
       # Pushes made with GITHUB_TOKEN start no workflows, but a dispatch does: the release commit goes to its own
       # branch, CI runs there, and main then fast-forwards to the tested commit.
-      - name: Push the release commit to a release branch
+      - name: Apply and check the release commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "release/v$VERSION"
           git am "$RUNNER_TEMP/release/release.patch"
-          # The patch comes from a job that ran third-party code. Push it only if it touches the release files.
-          unexpected=$(git diff --name-only HEAD~1 HEAD | grep -vxE "$RELEASE_FILES" || true)
-          if [ -n "$unexpected" ]; then
-            echo "::error::The release commit changes files outside the release: $unexpected"
-            exit 1
-          fi
-          # --force: a branch left over from a failed run of the same version must not block this one.
-          git push --force origin "release/v$VERSION"
+          # The patch comes from a job that ran third-party code: accept exactly one commit that changes only the
+          # release files, and in package.json, package-lock.json and orca-plugin.json only the version.
+          fail() { echo "::error::Release commit rejected: $1"; exit 1; }
+          [ "$(git rev-list --count "$GITHUB_SHA..HEAD")" = 1 ] || fail "the patch holds more than one commit"
+          read -ra allowed <<< "$RELEASE_PATHS"
+          while IFS= read -r f; do
+            ok=
+            for a in "${allowed[@]}"; do [[ $f == "$a" || $f == "$a/"* ]] && ok=1; done
+            [ -n "$ok" ] || fail "it changes $f"
+          done < <(git diff --no-renames --name-only "$GITHUB_SHA" HEAD)
+          same_except_version() { # file, jq filter that drops the version fields
+            cmp -s <(git show "$GITHUB_SHA:$1" | jq -S "$2") <(jq -S "$2" "$1") || fail "$1 changes more than the version"
+          }
+          same_except_version orca-plugin.json 'del(.version)'
+          same_except_version package.json 'del(.version)'
+          same_except_version package-lock.json 'del(.version, .packages[""].version)'
+          [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "version '$VERSION' is not MAJOR.MINOR.PATCH"
+          [ "$(jq -r .version orca-plugin.json)" = "$VERSION" ] || fail "orca-plugin.json does not say $VERSION"
+      # main only accepts commits with a green `test` check from GitHub Actions (ruleset "main: CI required").
+      # Pushes made with GITHUB_TOKEN start no workflows, but a dispatch does: the release commit goes to its own
+      # branch, CI runs there, and main then fast-forwards to the tested commit.
+      - name: Push the release branch
+        # --force: a branch left over from a failed run of the same version must not block this one.
+        run: git push --force origin "release/v$VERSION"
       - name: Run CI on the release commit
-        timeout-minutes: 30
+        timeout-minutes: 40
         run: |
           gh workflow run ci.yml --ref "release/v$VERSION"
           sha=$(git rev-parse HEAD)
-          for _ in $(seq 30); do
+          for _ in $(seq 60); do # up to 10 minutes for the dispatched run to show up
             run=$(gh run list --workflow ci.yml --commit "$sha" --event workflow_dispatch --json databaseId --jq '.[0].databaseId' || true)
             [ -n "$run" ] && break
-            sleep 5
+            sleep 10
           done
-          test -n "$run"
+          [ -n "$run" ] || { echo "::error::The dispatched CI run did not show up"; exit 1; }
           gh run watch "$run" --exit-status --interval 30
-      # Signed SLSA build provenance for the bundle Orca installs, once CI has passed; `gh attestation verify` checks it.
+      # If main moved while CI ran (a Renovate merge, say), the build is stale: start the release again from the new
+      # main, up to three attempts. Checked before signing, so a stale bundle gets no provenance.
+      - name: Check that main has not moved
+        env:
+          BUMP: ${{ inputs.bump || 'patch' }}
+          ATTEMPT: ${{ inputs.attempt || 1 }}
+        run: |
+          main=$(git ls-remote origin refs/heads/main | cut -f1)
+          [ "$main" = "$GITHUB_SHA" ] && exit 0
+          if [ "$ATTEMPT" -lt 3 ]; then
+            echo "::warning::main moved during the release; starting it again (attempt $((ATTEMPT + 1)))"
+            gh workflow run release.yml --ref main -f bump="$BUMP" -f attempt=$((ATTEMPT + 1))
+          fi
+          exit 1
+      # Signed SLSA build provenance for the bundle Orca installs; `gh attestation verify` checks it.
       - name: Attest build provenance
         id: attest
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: editor/index.html
-      - name: Push to main
+      - name: Push main and the tag together, then publish
         env:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
-          BUMP: ${{ inputs.bump || 'patch' }}
-          ATTEMPT: ${{ inputs.attempt || 1 }}
         run: |
-          # Stage the provenance first, so a missing bundle stops the run before anything is pushed.
           test -s "$BUNDLE"
           cp "$BUNDLE" "$RUNNER_TEMP/index.html.intoto.jsonl"
-          if git push origin HEAD:main; then exit 0; fi
-          # If main moved while CI ran (a Renovate merge, say), the build is stale: build again from the new main.
-          # Any other rejection (permissions, rules, network) would fail the same way again, so it just fails.
-          main=$(git ls-remote origin refs/heads/main | cut -f1)
-          if [ "$main" != "$GITHUB_SHA" ] && [ "$ATTEMPT" -lt 3 ]; then
-            echo "::warning::main moved during the release; starting it again (attempt $((ATTEMPT + 1)))"
-            gh workflow run release.yml --ref main -f bump="$BUMP" -f attempt=$((ATTEMPT + 1))
-          fi
-          exit 1
-      - name: Tag and publish
-        run: |
           git tag -a "v$VERSION" -m "v$VERSION"
-          git push origin "v$VERSION"
+          # --atomic: main and the tag land together or not at all, so main never says a version that has no tag.
+          git push --atomic origin HEAD:main "v$VERSION"
           gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release/release-notes.md" \
-            editor/index.html "$RUNNER_TEMP/index.html.intoto.jsonl"
+            editor/index.html "$RUNNER_TEMP/index.html.intoto.jsonl" ||
+            { echo "::error::main and v$VERSION are pushed, but the GitHub release failed; create it by hand"; exit 1; }
       # Pushes made with GITHUB_TOKEN skip their push triggers, so the release commit on main is scanned by dispatch.
       - name: Scan the release commit
         run: |

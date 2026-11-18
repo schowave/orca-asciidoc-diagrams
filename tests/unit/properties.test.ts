@@ -52,7 +52,30 @@ test('cssLength lets only a positive number with px or % through', () => {
   )
 })
 
-test('anchorId never throws', () => {
+test('cssLength keeps the number and unit of a valid length, defaults to px, and rejects zero and other units', () => {
+  const spaces = fc.constantFrom('', ' ', '  ', '\t')
+  const length = fc.record({
+    num: fc.stringMatching(/^\d{1,4}(\.\d{1,2})?$/),
+    unit: fc.constantFrom('', 'px', '%', 'em', 'rem', 'pt'),
+    before: spaces,
+    between: spaces,
+    after: spaces,
+  })
+  fc.assert(
+    fc.property(length, ({ num, unit, before, between, after }) => {
+      const expected = Number(num) === 0 || !['', 'px', '%'].includes(unit) ? undefined : `${num}${unit || 'px'}`
+      assert.equal(cssLength(`${before}${num}${between}${unit}${after}`), expected)
+    }),
+  )
+})
+
+test('anchorId decodes percent-escapes, keeps other text and never throws', () => {
+  fc.assert(
+    fc.property(fc.string({ unit: 'grapheme' }), (s) => {
+      assert.equal(anchorId('#' + encodeURIComponent(s)), s)
+      if (!s.includes('%')) assert.equal(anchorId('#' + s), s)
+    }),
+  )
   fc.assert(fc.property(fc.string({ unit: 'binary' }), (s) => void anchorId('#' + s)))
 })
 

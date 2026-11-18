@@ -21,5 +21,5 @@ Scorecard (Signed-Releases) and the Best Practices badge ask for signed releases
 
 - The release job needs `id-token: write` and `attestations: write`; the workflow's default token stays read-only.
 - The provenance names the commit the workflow started from, not the release commit made later in the same run.
-- The attestation is made only after CI passed on the release commit. If the push to `main` fails after that, it describes a bundle that was never released.
+- The attestation is made only after CI passed on the release commit and `main` was checked to be unchanged. Only if the atomic push of `main` and the tag fails in the seconds after that does it describe a bundle that was never released.
 - Release assets are for verification only. The catalog keeps installing from the tag.
