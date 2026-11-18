@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  # The release workflow dispatches CI on its release branch: pushes made with GITHUB_TOKEN start no workflows.
   workflow_dispatch:
 
 permissions:
@@ -32,5 +31,5 @@ jobs:
         run: npm test
       # On a release branch the committed bundle is what gets signed and installed: it must be the one just tested.
       - name: On a release branch, the committed bundle equals the tested build
-        if: startsWith(github.ref, 'refs/heads/release/')
+        if: startsWith(github.head_ref, 'release/') || startsWith(github.ref, 'refs/heads/release/')
         run: git diff --exit-code --stat editor/index.html

@@ -53,7 +53,7 @@ Work in a git worktree of your own, not in the main checkout. In a new worktree 
 - Ask before adding or upgrading a dependency, or changing `orca-plugin.json`, the CSP-related code in `tests/orca-frame.mjs`, or `.github/workflows/`.
 - Ask before pushing to `main`, creating tags or releases, or force-pushing. Releases come from the release workflow.
 - Stop and ask when the task leaves room for two readings, a fix needs a change outside the task's module, or a check fails for reasons unrelated to your change.
-- Keep secrets out of code, logs and prompts. The repo needs none; the release workflow uses GitHub's own token.
+- Keep secrets out of code, logs and prompts. The repo holds one secret, `RELEASE_APP_PRIVATE_KEY` of the GitHub App that opens release pull requests (ADR 0005); nothing else needs one.
 
 ## Where to find context
 

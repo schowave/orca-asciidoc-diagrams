@@ -8,7 +8,6 @@ on:
   pull_request:
   schedule:
     - cron: '30 4 * * 3' # Wednesdays 04:30 UTC, to pick up new CodeQL queries
-  # The release workflow dispatches a scan of its release commit: pushes made with GITHUB_TOKEN start no workflows.
   workflow_dispatch:
 
 permissions:

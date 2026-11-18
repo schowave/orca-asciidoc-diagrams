@@ -187,7 +187,7 @@ The frame has no file system, no network and no wasm.
 - **Releases:** `.github/workflows/release.yml` runs weekly on Mondays, or by dispatch with `patch`/`minor`/`major`:
   1. Refresh the stdlib bundles
   2. Build, in a job with a read-only token (CI tests the release commit in step 3)
-  3. If the build differs from the committed one (or on a dispatched minor/major), bump the version and changelog and commit to `release/vX.Y.Z` with a pull request. CI runs there by dispatch; once it is green, the workflow merges the pull request and tags the release commit, which gets a GitHub release (ADR 0005)
+  3. If the build differs from the committed one (or on a dispatched minor/major), bump the version and changelog and open a pull request from `release/vX.Y.Z` with the token of the GitHub App `orca-asciidoc-release`. It merges by itself once CI is green; `tag-release.yml` then tags the release commit and creates the GitHub release with the signed provenance (ADR 0005)
   4. The release carries `editor/index.html` as `index.html` with its signed SLSA build provenance (`index.html.intoto.jsonl`, ADR 0004). The Orca catalog ignores release assets: it installs from the tagged commit
   - `editor/index.html` on `main` is therefore the last *released* build. CI tests the build but does not require a committed rebuild in every PR.
 
