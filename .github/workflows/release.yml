@@ -1,12 +1,16 @@
 name: Release
 
-# Weekly, after Renovate's Monday run: refresh the PlantUML stdlib bundles, rebuild the plugin, and open a release
-# pull request when the plugin differs from the last released one (ADR 0005). It merges by itself once CI is green;
-# tag-release.yml then tags and publishes the release.
+# Weekly, after Renovate's Monday run, and whenever the dependencies on main change (a Renovate security update, say):
+# refresh the PlantUML stdlib bundles, rebuild the plugin, and open a release pull request when the plugin differs
+# from the last released one (ADR 0005). Dev-only updates leave the bundle as it is and release nothing. The pull
+# request merges by itself once CI is green; tag-release.yml then tags and publishes the release.
 #
 # Two jobs, so no third-party code runs with write access: `build` runs npm and the build scripts with a
 # read-only token and hands the release commit over as a patch; `publish` only runs git and gh.
 on:
+  push:
+    branches: [main]
+    paths: [package-lock.json]
   schedule:
     - cron: '0 9 * * 1' # Mondays 09:00 UTC
   workflow_dispatch:
