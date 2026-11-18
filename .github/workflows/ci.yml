@@ -16,19 +16,19 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Installs the tool versions from mise.toml, the same ones used locally.
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      # The PlantUML stdlib bundles are not committed; download them (checked against the lock).
-      - run: node scripts/fetch-stdlib.mjs
+      # The same setup as locally: packages, headless Chromium, PlantUML stdlib (checked against the lock).
+      - run: mise run setup
+      # Chromium's system libraries, which only a fresh runner lacks.
+      - run: pnpm exec playwright install-deps chromium
       # The same command as locally: format, lint, types, TODO rule, unit tests.
       - name: Fast checks
-        run: pnpm run check
+        run: mise run check
       - name: Dead code, duplicates, licenses
-        run: pnpm run check:deep
+        run: mise run check-deep
       # editor/index.html on main is the last *released* build; the release workflow rebuilds and
       # commits it. Here the build is only tested, so dependency PRs need no committed rebuild.
       - name: Build and test in a replica of Orca's sandboxed frame
-        run: pnpm test
+        run: mise run test
       # On a release branch the committed bundle is what gets signed and installed: it must be the one just tested.
       - name: On a release branch, the committed bundle equals the tested build
         if: startsWith(github.head_ref, 'release/') || startsWith(github.ref, 'refs/heads/release/')
