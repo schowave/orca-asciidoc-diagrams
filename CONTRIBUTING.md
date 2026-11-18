@@ -11,7 +11,7 @@ Open an [issue](https://github.com/schowave/orca-asciidoc-diagrams/issues/new/ch
 Tool versions and tasks live in [`mise.toml`](mise.toml), with checksums in `mise.lock`. CI uses the same files, so local and remote builds run on the same Node.
 
 ```sh
-mise trust && mise run setup   # once: pinned Node and lefthook, npm packages, headless Chromium, git hooks (https://mise.jdx.dev)
+mise trust && mise run setup   # once: pinned Node, pnpm and lefthook, packages, headless Chromium, git hooks (https://mise.jdx.dev)
 mise run check         # fast checks: format, lint, types, TODO rule, unit tests
 mise run check-deep    # dead code, duplicate code, dependency licenses (CI runs these too)
 mise run test          # build + render the fixtures in headless Chromium inside a replica of Orca's frame

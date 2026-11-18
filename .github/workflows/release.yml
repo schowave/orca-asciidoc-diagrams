@@ -5,12 +5,12 @@ name: Release
 # from the last released one (ADR 0005). Dev-only updates leave the bundle as it is and release nothing. The pull
 # request merges by itself once CI is green; tag-release.yml then tags and publishes the release.
 #
-# Two jobs, so no third-party code runs with write access: `build` runs npm and the build scripts with a
+# Two jobs, so no third-party code runs with write access: `build` runs pnpm and the build scripts with a
 # read-only token and hands the release commit over as a patch; `publish` only runs git and gh.
 on:
   push:
     branches: [main]
-    paths: [package-lock.json]
+    paths: [pnpm-lock.yaml]
   schedule:
     - cron: '0 9 * * 1' # Mondays 09:00 UTC
   workflow_dispatch:
@@ -27,8 +27,8 @@ permissions:
 env:
   # The files a release commit changes: the build job commits them, the publish job accepts nothing else.
   RELEASE_PATHS: >-
-    editor/index.html vendor/plantuml-stdlib.lock.json images orca-plugin.json package.json package-lock.json
-    CHANGELOG.md README.md docs/agent-stats.md
+    editor/index.html vendor/plantuml-stdlib.lock.json images orca-plugin.json package.json CHANGELOG.md README.md
+    docs/agent-stats.md
 
 concurrency:
   group: release
@@ -45,12 +45,12 @@ jobs:
           fetch-depth: 0 # tags and history for the changelog
           persist-credentials: false
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
       - name: Refresh PlantUML stdlib bundles
         run: node scripts/fetch-stdlib.mjs --update
       # Only the build: CI tests the release commit in the publish job, and main accepts it only after that.
       - name: Build
-        run: npm run build
+        run: pnpm run build
       - name: Bump version and changelog
         id: bump
         env:
@@ -108,7 +108,7 @@ jobs:
           git switch -c "release/v$VERSION"
           git am "$RUNNER_TEMP/release/release.patch"
           # The patch comes from a job that ran third-party code: accept exactly one commit that changes only the
-          # release files, and in package.json, package-lock.json and orca-plugin.json only the version.
+          # release files, and in package.json and orca-plugin.json only the version.
           fail() { echo "::error::Release commit rejected: $1"; exit 1; }
           [ "$(git rev-list --count "$GITHUB_SHA..HEAD")" = 1 ] || fail "the patch holds more than one commit"
           read -ra allowed <<< "$RELEASE_PATHS"
@@ -122,7 +122,6 @@ jobs:
           }
           same_except_version orca-plugin.json 'del(.version)'
           same_except_version package.json 'del(.version)'
-          same_except_version package-lock.json 'del(.version, .packages[""].version)'
           [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "version '$VERSION' is not MAJOR.MINOR.PATCH"
           [ "$(jq -r .version orca-plugin.json)" = "$VERSION" ] || fail "orca-plugin.json does not say $VERSION"
       - name: Open the release pull request and let it merge once CI is green

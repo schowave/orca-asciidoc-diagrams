@@ -13,13 +13,14 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "todo:check": "! git grep -nIE '(TODO|FIXME)' -- '*.ts' '*.mjs' '*.js' | grep -vE '(TODO|FIXME)\\([a-z0-9_.-]+\\): .*(https?://|[A-Z]+-[0-9]+)'",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm run todo:check && npm run test:unit",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run todo:check && pnpm run test:unit",
     "dead-code": "knip",
     "duplicates": "jscpd",
     "licenses": "license-checker-rseidelsohn --production --excludePrivatePackages --excludePackages khroma@2.1.0 --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;Unlicense;EPL-2.0;MPL-2.0;(MPL-2.0 OR Apache-2.0)' --summary",
-    "check:deep": "npm run dead-code && npm run duplicates && npm run licenses",
+    "check:deep": "pnpm run dead-code && pnpm run duplicates && pnpm run licenses",
     "media": "node scripts/media.mjs"
   },
+  "packageManager": "pnpm@12.21.0",
   "dependencies": {
     "@asciidoctor/core": "4.3.0",
     "@plantuml/core": "1.2026.10",

@@ -1,8 +1,8 @@
 // Cuts a patch release when the freshly built plugin differs from the committed one.
-// Used by .github/workflows/release.yml after `npm run build` has rebuilt editor/index.html (CI tests the release
+// Used by .github/workflows/release.yml after `pnpm run build` has rebuilt editor/index.html (CI tests the release
 // commit afterwards, see docs/adr/0005-release-through-a-ci-tested-branch.md):
 //   node scripts/release.mjs        → prints the new version, or nothing when there is nothing to release
-// It bumps the version in orca-plugin.json, package.json and package-lock.json and turns the CHANGELOG's
+// It bumps the version in orca-plugin.json and package.json (pnpm-lock.yaml holds none) and turns the CHANGELOG's
 // "## Unreleased" notes into the release entry (falling back to the commits since the last tag when there
 // are none). Committing, tagging and pushing are left to the workflow.
 import fs from 'node:fs'
@@ -48,12 +48,9 @@ const version = nextVersion(manifest.version, bump)
 
 manifest.version = version
 writeJson('orca-plugin.json', manifest)
-for (const f of ['package.json', 'package-lock.json']) {
-  const data = readJson(f)
-  data.version = version
-  if (data.packages?.['']) data.packages[''].version = version
-  writeJson(f, data)
-}
+const pkg = readJson('package.json')
+pkg.version = version
+writeJson('package.json', pkg)
 
 const LOCK = 'vendor/plantuml-stdlib.lock.json'
 const jsonAt = (ref, file) => {

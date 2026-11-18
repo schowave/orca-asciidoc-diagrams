@@ -11,7 +11,7 @@ MIT, ISC, Apache-2.0, BSD-2-Clause, BSD-3-Clause, 0BSD, Unlicense, MPL-2.0 (also
 
 ## Enforced
 
-`npm run licenses` (part of `npm run check:deep`, run by CI) fails when a production dependency has a license outside this list. The list lives in the `licenses` script in `package.json`; keep both in sync.
+`pnpm run licenses` (part of `pnpm run check:deep`, run by CI) fails when a production dependency has a license outside this list. The list lives in the `licenses` script in `package.json`; keep both in sync.
 
 `khroma` is excluded from the check: the tool only guesses `MIT*` for it; its repository declares MIT.
 
