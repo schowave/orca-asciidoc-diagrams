@@ -25,6 +25,14 @@ run = "pnpm run check"
 description = "Slower checks that CI also runs: dead code, duplicates, dependency licenses"
 run = "pnpm run check:deep"
 
+[tasks.fmt]
+description = "Format all files with Prettier"
+run = "pnpm run format"
+
+[tasks.lint]
+description = "ESLint"
+run = "pnpm run lint"
+
 [tasks.build]
 description = "Build editor/index.html and mirror the plugin to dist/plugin"
 run = "pnpm run build"
