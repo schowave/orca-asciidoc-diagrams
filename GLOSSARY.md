@@ -44,3 +44,9 @@ Orca's 10 MiB limit on the entry. `scripts/build.mjs` fails above 9.5 MiB.
 
 **Release**:
 A tagged, versioned build published as a GitHub release by the weekly workflow `.github/workflows/release.yml`. Only releases change `editor/index.html` on `main`.
+
+**Release branch**:
+`release/vX.Y.Z`, where the release workflow puts the release commit so CI can test it before `main` fast-forwards to it. Deleted after each run (ADR 0005).
+
+**Build provenance**:
+A signed statement (SLSA, through Sigstore) that the release workflow built a given `editor/index.html` from a given commit. Attached to each release as `index.html.intoto.jsonl` and checked with `gh attestation verify` (ADR 0004).

@@ -30,3 +30,7 @@ jobs:
       # commits it. Here the build is only tested, so dependency PRs need no committed rebuild.
       - name: Build and test in a replica of Orca's sandboxed frame
         run: npm test
+      # On a release branch the committed bundle is what gets signed and installed: it must be the one just tested.
+      - name: On a release branch, the committed bundle equals the tested build
+        if: startsWith(github.ref, 'refs/heads/release/')
+        run: git diff --exit-code --stat editor/index.html
