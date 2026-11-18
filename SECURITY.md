@@ -10,13 +10,11 @@ You can expect a first answer within a week. Fixes ship as a new release, which 
 
 ## Verifying a release
 
-Every release after 1.3.0 attaches `index.html` (the bundle Orca installs) and its signed build provenance. With the [GitHub CLI](https://cli.github.com):
+Every release after 1.3.0 attaches `index.html` (the bundle Orca installs) and its signed build provenance. Download `index.html` from the release and check it with the [GitHub CLI](https://cli.github.com):
 
 ```sh
 gh attestation verify index.html --repo schowave/orca-asciidoc-diagrams
 ```
-
-The same check works on `editor/index.html` in an installed plugin or a checkout of a release tag.
 
 ## Supported versions
 
