@@ -41,7 +41,7 @@
     "license-checker-rseidelsohn": "5.0.1",
     "playwright": "1.65.1",
     "prettier": "3.10.1",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.73.0"
   },
   "description": "Orca plugin: AsciiDoc preview with inline PlantUML and Mermaid diagrams, fully offline",
