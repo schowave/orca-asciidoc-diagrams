@@ -83,7 +83,8 @@ jobs:
     if: needs.build.outputs.version != ''
     runs-on: ubuntu-latest
     permissions:
-      contents: write # push the release branch, main and the tag; create the release
+      contents: write # push the release branch and the tag, merge the release PR, create the release
+      pull-requests: write # open and merge the release PR
       actions: write # run CI, CodeQL and Scorecard on the release commit; start the release again
       id-token: write # sign the build provenance
       attestations: write # store the build provenance
@@ -98,9 +99,6 @@ jobs:
         with:
           name: release
           path: ${{ runner.temp }}/release
-      # main only accepts commits with a green `test` check from GitHub Actions (ruleset "main: CI required").
-      # Pushes made with GITHUB_TOKEN start no workflows, but a dispatch does: the release commit goes to its own
-      # branch, CI runs there, and main then fast-forwards to the tested commit.
       - name: Apply and check the release commit
         run: |
           git config user.name "github-actions[bot]"
@@ -125,12 +123,16 @@ jobs:
           same_except_version package-lock.json 'del(.version, .packages[""].version)'
           [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "version '$VERSION' is not MAJOR.MINOR.PATCH"
           [ "$(jq -r .version orca-plugin.json)" = "$VERSION" ] || fail "orca-plugin.json does not say $VERSION"
-      # main only accepts commits with a green `test` check from GitHub Actions (ruleset "main: CI required").
-      # Pushes made with GITHUB_TOKEN start no workflows, but a dispatch does: the release commit goes to its own
-      # branch, CI runs there, and main then fast-forwards to the tested commit.
-      - name: Push the release branch
-        # --force: a branch left over from a failed run of the same version must not block this one.
-        run: git push --force origin "release/v$VERSION"
+      # main only takes changes through a pull request with a green `test` check from GitHub Actions (ruleset
+      # "main: CI required"; a direct push is refused even when the commit has that check). Pull requests and pushes
+      # made with GITHUB_TOKEN start no workflows, but a dispatch does, so CI is dispatched on the release branch.
+      - name: Push the release branch and open its pull request
+        run: |
+          # --force: a branch left over from a failed run of the same version must not block this one.
+          git push --force origin "release/v$VERSION"
+          gh pr list --head "release/v$VERSION" --state open --json number --jq '.[0].number' | grep -q . ||
+            gh pr create --base main --head "release/v$VERSION" --title "Release v$VERSION" \
+              --body-file "$RUNNER_TEMP/release/release-notes.md"
       - name: Run CI on the release commit
         timeout-minutes: 40
         run: |
@@ -163,23 +165,34 @@ jobs:
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: editor/index.html
-      - name: Push main and the tag together, then publish
+      - name: Merge the release pull request, tag the release commit and publish
         env:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |
           test -s "$BUNDLE"
           cp "$BUNDLE" "$RUNNER_TEMP/index.html.intoto.jsonl"
-          git tag -a "v$VERSION" -m "v$VERSION"
-          # --atomic: main and the tag land together or not at all, so main never says a version that has no tag.
-          git push --atomic origin HEAD:main "v$VERSION"
+          sha=$(git rev-parse HEAD)
+          # GitHub needs a moment to register the check; --match-head-commit merges only the commit CI tested.
+          merged=
+          for _ in $(seq 12); do
+            if gh pr merge "release/v$VERSION" --merge --match-head-commit "$sha"; then merged=1; break; fi
+            sleep 10
+          done
+          [ -n "$merged" ] || { echo "::error::The release pull request could not be merged"; exit 1; }
+          # The tag goes on the tested release commit itself, which the merge made part of main.
+          git tag -a "v$VERSION" -m "v$VERSION" "$sha"
+          git push origin "v$VERSION" ||
+            { echo "::error::main has v$VERSION, but pushing the tag failed; push it by hand"; exit 1; }
           gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/release/release-notes.md" \
             editor/index.html "$RUNNER_TEMP/index.html.intoto.jsonl" ||
-            { echo "::error::main and v$VERSION are pushed, but the GitHub release failed; create it by hand"; exit 1; }
-      # Pushes made with GITHUB_TOKEN skip their push triggers, so the release commit on main is scanned by dispatch.
+            { echo "::error::v$VERSION is tagged, but the GitHub release failed; create it by hand"; exit 1; }
+      # Merges made with GITHUB_TOKEN skip push triggers, so the release on main is scanned by dispatch.
       - name: Scan the release commit
         run: |
           gh workflow run codeql.yml --ref main
           gh workflow run scorecard.yml --ref main
-      - name: Delete the release branch
+      - name: Close a release pull request left open and delete the release branch
         if: always()
-        run: git push origin --delete "release/v$VERSION" || true
+        run: |
+          gh pr close "release/v$VERSION" --comment "Release run ${{ github.run_id }} did not finish." 2>/dev/null || true
+          git push origin --delete "release/v$VERSION" 2>/dev/null || true
