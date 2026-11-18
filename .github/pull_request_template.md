@@ -4,6 +4,7 @@
 
 ## Checklist
 
+- [ ] New behaviour has tests; a bug fix has a test that failed before the fix
 - [ ] `mise run check` is green
 - [ ] `mise run test` is green (needed when `src/`, `scripts/build.mjs`, `tests/` or dependencies change)
 - [ ] User-visible change: a line under `## Unreleased` in `CHANGELOG.md`, written for users, and `README.md` updated
