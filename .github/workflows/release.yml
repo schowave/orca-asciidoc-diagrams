@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # commit, tag and publish the release
+      actions: write # run CI on the release commit
       id-token: write # sign the build provenance
       attestations: write # store the build provenance
     steps:
@@ -53,11 +54,13 @@ jobs:
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: editor/index.html
-      - name: Commit, tag and publish
+      # main only accepts commits with a green `test` check from GitHub Actions (ruleset "main: CI required").
+      # Pushes made with GITHUB_TOKEN start no workflows, but a dispatch does: the release commit goes to its own
+      # branch, CI runs there, and main then fast-forwards to the tested commit.
+      - name: Commit to a release branch
         if: steps.bump.outputs.version != ''
         env:
           VERSION: ${{ steps.bump.outputs.version }}
-          GH_TOKEN: ${{ github.token }}
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |
           # Stage the provenance first, so a missing bundle stops the run before anything is pushed.
@@ -65,9 +68,39 @@ jobs:
           cp "$BUNDLE" "$RUNNER_TEMP/index.html.intoto.jsonl"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "release/v$VERSION"
           git add editor/index.html vendor/plantuml-stdlib.lock.json images orca-plugin.json package.json package-lock.json CHANGELOG.md README.md docs/agent-stats.md
           git commit -m "Release v$VERSION"
+          git push origin "release/v$VERSION"
+      - name: Run CI on the release commit
+        if: steps.bump.outputs.version != ''
+        timeout-minutes: 30
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run ci.yml --ref "release/v$VERSION"
+          sha=$(git rev-parse HEAD)
+          for _ in $(seq 30); do
+            run=$(gh run list --workflow ci.yml --commit "$sha" --event workflow_dispatch --json databaseId --jq '.[0].databaseId')
+            [ -n "$run" ] && break
+            sleep 5
+          done
+          test -n "$run"
+          gh run watch "$run" --exit-status --interval 30
+      - name: Push to main, tag and publish
+        if: steps.bump.outputs.version != ''
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push origin HEAD:main
           git tag -a "v$VERSION" -m "v$VERSION"
-          git push origin HEAD:main "v$VERSION"
+          git push origin "v$VERSION"
           gh release create "v$VERSION" --title "v$VERSION" --notes-file release-notes.md \
             editor/index.html "$RUNNER_TEMP/index.html.intoto.jsonl"
+      - name: Delete the release branch
+        if: always() && steps.bump.outputs.version != ''
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: git push origin --delete "release/v$VERSION" || true
