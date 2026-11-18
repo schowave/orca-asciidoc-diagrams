@@ -185,7 +185,7 @@ The frame has no file system, no network and no wasm.
   - The PlantUML stdlib bundles come from plantuml.github.io and are not in npm; the release workflow refreshes them
 - **Releases:** `.github/workflows/release.yml` runs weekly on Mondays, or by dispatch with `patch`/`minor`/`major`:
   1. Refresh the stdlib bundles
-  2. Build and test
+  2. Build (CI tests the release commit in step 3)
   3. If the build differs from the committed one (or on a dispatched minor/major), bump the version and changelog and commit to `release/vX.Y.Z`. CI runs there by dispatch; once it is green, `main` fast-forwards to that commit, which gets the tag and a GitHub release (ADR 0005)
   4. The release carries `editor/index.html` as `index.html` with its signed SLSA build provenance (`index.html.intoto.jsonl`, ADR 0004). The Orca catalog ignores release assets: it installs from the tagged commit
   - `editor/index.html` on `main` is therefore the last *released* build. CI tests the build but does not require a committed rebuild in every PR.

@@ -34,11 +34,11 @@ jobs:
           fetch-depth: 0 # tags and history for the changelog
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
       - name: Refresh PlantUML stdlib bundles
         run: node scripts/fetch-stdlib.mjs --update
-      - name: Build and test
-        run: npm test
+      # Only the build: CI tests the release commit below, and main accepts it only after that.
+      - name: Build
+        run: npm run build
       - name: Bump version and changelog
         id: bump
         env:
@@ -47,13 +47,6 @@ jobs:
       - name: Agent contribution measures
         if: steps.bump.outputs.version != ''
         run: node scripts/agent-stats.mjs
-      # Signed SLSA build provenance for the bundle Orca installs; `gh attestation verify` checks it.
-      - name: Attest build provenance
-        id: attest
-        if: steps.bump.outputs.version != ''
-        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
-        with:
-          subject-path: editor/index.html
       # main only accepts commits with a green `test` check from GitHub Actions (ruleset "main: CI required").
       # Pushes made with GITHUB_TOKEN start no workflows, but a dispatch does: the release commit goes to its own
       # branch, CI runs there, and main then fast-forwards to the tested commit.
@@ -61,17 +54,14 @@ jobs:
         if: steps.bump.outputs.version != ''
         env:
           VERSION: ${{ steps.bump.outputs.version }}
-          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |
-          # Stage the provenance first, so a missing bundle stops the run before anything is pushed.
-          test -s "$BUNDLE"
-          cp "$BUNDLE" "$RUNNER_TEMP/index.html.intoto.jsonl"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "release/v$VERSION"
           git add editor/index.html vendor/plantuml-stdlib.lock.json images orca-plugin.json package.json package-lock.json CHANGELOG.md README.md docs/agent-stats.md
           git commit -m "Release v$VERSION"
-          git push origin "release/v$VERSION"
+          # --force: a branch left over from a failed run of the same version must not block this one.
+          git push --force origin "release/v$VERSION"
       - name: Run CI on the release commit
         if: steps.bump.outputs.version != ''
         timeout-minutes: 30
@@ -82,18 +72,29 @@ jobs:
           gh workflow run ci.yml --ref "release/v$VERSION"
           sha=$(git rev-parse HEAD)
           for _ in $(seq 30); do
-            run=$(gh run list --workflow ci.yml --commit "$sha" --event workflow_dispatch --json databaseId --jq '.[0].databaseId')
+            run=$(gh run list --workflow ci.yml --commit "$sha" --event workflow_dispatch --json databaseId --jq '.[0].databaseId' || true)
             [ -n "$run" ] && break
             sleep 5
           done
           test -n "$run"
           gh run watch "$run" --exit-status --interval 30
+      # Signed SLSA build provenance for the bundle Orca installs, once CI has passed; `gh attestation verify` checks it.
+      - name: Attest build provenance
+        id: attest
+        if: steps.bump.outputs.version != ''
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: editor/index.html
       - name: Push to main, tag and publish
         if: steps.bump.outputs.version != ''
         env:
           VERSION: ${{ steps.bump.outputs.version }}
           GH_TOKEN: ${{ github.token }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |
+          # Stage the provenance first, so a missing bundle stops the run before anything is pushed.
+          test -s "$BUNDLE"
+          cp "$BUNDLE" "$RUNNER_TEMP/index.html.intoto.jsonl"
           git push origin HEAD:main
           git tag -a "v$VERSION" -m "v$VERSION"
           git push origin "v$VERSION"

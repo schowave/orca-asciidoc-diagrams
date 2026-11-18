@@ -6,7 +6,7 @@ import { LoggerManager, NullLogger } from '@asciidoctor/core'
 import fc from 'fast-check'
 import { decode, encode } from '../../src/base122.ts'
 import { convertAdoc } from '../../src/convert.ts'
-import { anchorId, cssLength, escapeHtml, splitMath } from '../../src/text.ts'
+import { anchorId, cssLength, escapeHtml, splitMath, type MathPart } from '../../src/text.ts'
 
 test('base-122 round-trips any bytes and never emits NUL, CR or "<"', () => {
   fc.assert(
@@ -35,7 +35,13 @@ test('escapeHtml leaves no markup characters and can be reversed', () => {
 })
 
 test('cssLength lets only a positive number with px or % through', () => {
-  const values = fc.oneof(fc.string(), fc.stringMatching(/^\s*\d{1,4}(\.\d{1,2})?\s*(px|%|em)?\s*$/), fc.anything())
+  // Asciidoctor passes attribute values as strings, numbers or nothing.
+  const values = fc.oneof(
+    fc.string(),
+    fc.stringMatching(/^\s*\d{1,4}(\.\d{1,2})?\s*(px|%|em)?\s*$/),
+    fc.double(),
+    fc.constantFrom(undefined, null),
+  )
   fc.assert(
     fc.property(values, (v) => {
       const out = cssLength(v)
@@ -48,22 +54,20 @@ test('anchorId never throws', () => {
   fc.assert(fc.property(fc.string({ unit: 'binary' }), (s) => void anchorId('#' + s)))
 })
 
-test('splitMath keeps all text outside the formulas, in order', () => {
+test('splitMath loses nothing: the parts, wrapped in their delimiters again, give back the input', () => {
   const piece = fc.oneof(fc.string(), fc.constantFrom('\\$', '\\(', '\\)', '\\[', '\\]', 'x^2', ' '))
+  const wrap = (p: MathPart) => {
+    if (typeof p === 'string') return p
+    if (p.notation === 'asciimath') return `\\$${p.tex}\\$`
+    return p.display ? `\\[${p.tex}\\]` : `\\(${p.tex}\\)`
+  }
+  // Outside a stem block only \[…\] is display math, so each part maps back to exactly one delimiter.
   fc.assert(
     fc.property(
       fc.array(piece, { maxLength: 12 }).map((p) => p.join('')),
-      fc.boolean(),
-      (text, inBlock) => {
-        const parts = splitMath(text, inBlock)
-        if (!parts) return
-        let at = 0
-        for (const p of parts) {
-          if (typeof p !== 'string') continue
-          at = text.indexOf(p, at)
-          assert.ok(at >= 0, 'text parts appear in the input, in order')
-          at += p.length
-        }
+      (text) => {
+        const parts = splitMath(text, false)
+        if (parts) assert.equal(parts.map(wrap).join(''), text)
       },
     ),
   )
