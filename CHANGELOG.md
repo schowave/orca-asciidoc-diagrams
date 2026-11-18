@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Release notes now list the updated libraries (Mermaid, PlantUML, DOMPurify and others) by version
+- Updates of these libraries, security fixes above all, are released right away instead of with the next weekly release
+
 ## 1.3.1
 
 - Each release now carries the plugin bundle with a signed build provenance, so you can check that it was built by this repository's release workflow

@@ -9,7 +9,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { unreleasedNotes, withRelease } from './changelog.mjs'
+import { dependencyLine, unreleasedNotes, withRelease } from './changelog.mjs'
 import { changedLibs } from './stdlib-lock.mjs'
 import { nextVersion, withInstallUrlVersion } from './version.mjs'
 
@@ -56,15 +56,15 @@ for (const f of ['package.json', 'package-lock.json']) {
 }
 
 const LOCK = 'vendor/plantuml-stdlib.lock.json'
-const lockAt = (ref) => {
+const jsonAt = (ref, file) => {
   try {
-    return JSON.parse(git('show', `${ref}:${LOCK}`))
+    return JSON.parse(git('show', `${ref}:${file}`))
   } catch {
     return {} // not committed yet at that ref
   }
 }
 // Against the last release, so lock updates merged between releases are named too.
-const stdlib = changedLibs(lockAt(lastTag), readJson(LOCK))
+const stdlib = changedLibs(jsonAt(lastTag, LOCK), readJson(LOCK))
 const stdlibLine = stdlib.length ? [`- Updated PlantUML libraries: ${stdlib.join(', ')}`] : []
 const changelogFile = path.join(ROOT, 'CHANGELOG.md')
 const changelog = fs.readFileSync(changelogFile, 'utf8')
@@ -76,7 +76,9 @@ if (!notes.length) {
     .filter((s) => s && !s.startsWith('Release ') && !s.startsWith('CHANGELOG'))
     .map((s) => `- ${s}`)
 }
-const lines = [...notes, ...stdlibLine]
+// The same for the libraries in the bundle (Renovate updates them without changelog notes).
+const deps = dependencyLine(jsonAt(lastTag, 'package.json'), readJson('package.json'))
+const lines = [...notes, ...(deps ? [deps] : []), ...stdlibLine]
 if (!lines.length) lines.push('- Rebuild')
 const readme = path.join(ROOT, 'README.md')
 fs.writeFileSync(readme, withInstallUrlVersion(fs.readFileSync(readme, 'utf8'), version))
