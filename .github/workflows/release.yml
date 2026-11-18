@@ -83,6 +83,9 @@ jobs:
     env:
       VERSION: ${{ needs.build.outputs.version }}
       GH_TOKEN: ${{ github.token }}
+      # What the build job commits (see its `git add`), as one extended regular expression.
+      RELEASE_FILES: >-
+        editor/index\.html|vendor/plantuml-stdlib\.lock\.json|images/.*|orca-plugin\.json|package\.json|package-lock\.json|CHANGELOG\.md|README\.md|docs/agent-stats\.md
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -100,6 +103,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "release/v$VERSION"
           git am "$RUNNER_TEMP/release/release.patch"
+          # The patch comes from a job that ran third-party code. Push it only if it touches the release files.
+          unexpected=$(git diff --name-only HEAD~1 HEAD | grep -vxE "$RELEASE_FILES" || true)
+          if [ -n "$unexpected" ]; then
+            echo "::error::The release commit changes files outside the release: $unexpected"
+            exit 1
+          fi
           # --force: a branch left over from a failed run of the same version must not block this one.
           git push --force origin "release/v$VERSION"
       - name: Run CI on the release commit
@@ -130,8 +139,10 @@ jobs:
           test -s "$BUNDLE"
           cp "$BUNDLE" "$RUNNER_TEMP/index.html.intoto.jsonl"
           if git push origin HEAD:main; then exit 0; fi
-          # main moved while CI ran (a Renovate merge, say). The build is stale, so build again from the new main.
-          if [ "$ATTEMPT" -lt 3 ]; then
+          # If main moved while CI ran (a Renovate merge, say), the build is stale: build again from the new main.
+          # Any other rejection (permissions, rules, network) would fail the same way again, so it just fails.
+          main=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$main" != "$GITHUB_SHA" ] && [ "$ATTEMPT" -lt 3 ]; then
             echo "::warning::main moved during the release; starting it again (attempt $((ATTEMPT + 1)))"
             gh workflow run release.yml --ref main -f bump="$BUMP" -f attempt=$((ATTEMPT + 1))
           fi

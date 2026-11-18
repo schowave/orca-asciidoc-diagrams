@@ -1,5 +1,6 @@
 // Cuts a patch release when the freshly built plugin differs from the committed one.
-// Used by .github/workflows/release.yml after `npm test` has rebuilt editor/index.html:
+// Used by .github/workflows/release.yml after `npm run build` has rebuilt editor/index.html (CI tests the release
+// commit afterwards, see docs/adr/0005-release-through-a-ci-tested-branch.md):
 //   node scripts/release.mjs        → prints the new version, or nothing when there is nothing to release
 // It bumps the version in orca-plugin.json, package.json and package-lock.json and turns the CHANGELOG's
 // "## Unreleased" notes into the release entry (falling back to the commits since the last tag when there

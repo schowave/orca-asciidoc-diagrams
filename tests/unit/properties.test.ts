@@ -45,7 +45,9 @@ test('cssLength lets only a positive number with px or % through', () => {
   fc.assert(
     fc.property(values, (v) => {
       const out = cssLength(v)
-      if (out !== undefined) assert.match(out, /^\d+(\.\d+)?(px|%)$/)
+      if (out === undefined) return
+      assert.match(out, /^\d+(\.\d+)?(px|%)$/)
+      assert.ok(parseFloat(out) > 0, `${out} is not positive`)
     }),
   )
 })
