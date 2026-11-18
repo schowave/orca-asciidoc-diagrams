@@ -3,7 +3,7 @@
   "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
   "schedule": ["before 6am on monday"],
   "timezone": "Europe/Berlin",
-  "platformAutomerge": false,
+  "platformAutomerge": true,
   "packageRules": [
     {
       "description": "Patch and minor updates (npm, mise, GitHub Actions) merge by themselves once CI is green",
