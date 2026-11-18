@@ -22,7 +22,10 @@ workflows, so CI would never run on such a commit by itself.
 ## Consequences
 
 - `ci.yml` accepts `workflow_dispatch`; the release job needs `actions: write`.
-- The release job itself only builds; the dispatched CI run does the tests, so they run once per release.
-- If `main` moves while CI runs (for example a Renovate merge), the fast-forward fails and the release is skipped
-  until the next run (or a manual dispatch). The release branch is deleted afterwards, and a leftover one is
-  overwritten by the next run.
+- The workflow has two jobs. `build` runs npm and the build scripts with a read-only token and passes the release
+  commit on as a patch; `publish` holds the write permissions and runs only git and gh. It does not test: the
+  dispatched CI run does, so the tests run once per release.
+- If `main` moves while CI runs (for example a Renovate merge), the fast-forward fails. The build is then stale, so
+  the workflow dispatches itself again to build from the new `main`, up to three attempts.
+- The release branch is deleted afterwards, and a leftover one is overwritten by the next run.
+- Push triggers do not fire for the release commit on `main`, so `publish` dispatches CodeQL and Scorecard for it.
