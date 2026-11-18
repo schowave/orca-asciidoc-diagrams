@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Each release now carries the plugin bundle with a signed build provenance, so you can check that it was built by this repository's release workflow
+
 ## 1.3.0
 
 - Zoom into a diagram: the new toolbar on each diagram (or a double click) shows it full-size, with wheel or pinch zoom and drag to pan

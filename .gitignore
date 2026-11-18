@@ -14,3 +14,4 @@ coverage/
 
 # PlantUML stdlib download cache (pinned by vendor/plantuml-stdlib.lock.json)
 vendor/plantuml-stdlib/
+index.html.intoto.jsonl

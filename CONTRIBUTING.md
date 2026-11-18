@@ -31,6 +31,7 @@ mise tasks             # list all tasks
 
 ## Pull requests
 
+- New behaviour comes with tests: unit tests in `tests/unit/` for logic, a fixture in `tests/fixtures/` for rendering. Bug fixes come with a test that failed before the fix.
 - Run `mise run check` and `mise run test` before you push; CI runs the same, plus `mise run check-deep`.
 - Changes users notice get a line under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md), written for users. The release workflow turns it into the release notes.
 - Leave `editor/index.html` alone: the weekly release workflow rebuilds and commits it.
