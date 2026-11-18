@@ -1,0 +1,3 @@
+# Build output (scripts/build.mjs, committed by the release workflow): kept out of GitHub's language statistics, so the
+# repository counts as TypeScript and tools such as OpenSSF Scorecard look for TypeScript fuzzing (fast-check).
+editor/index.html linguist-generated
