@@ -127,8 +127,8 @@ Orca marks plugins installed this way as *Unverified*, and they update only when
 ```sh
 git clone https://github.com/schowave/orca-asciidoc-diagrams
 cd orca-asciidoc-diagrams
-npm ci
-npm run build          # writes editor/index.html and mirrors the plugin to dist/plugin
+pnpm install --frozen-lockfile  # pnpm 12; `mise install` sets it up
+pnpm run build          # writes editor/index.html and mirrors the plugin to dist/plugin
 ```
 
 Then, in Orca:
@@ -167,7 +167,7 @@ You can build the plugin with exactly the PlantUML stdlib libraries you need, fo
 ```sh
 export PLANTUML_STDLIB=c4,awslib14      # stdlib folder names, lower-case
 node scripts/fetch-stdlib.mjs           # downloads the selected libraries
-npm run build                           # dist/plugin now contains your selection
+pnpm run build                           # dist/plugin now contains your selection
 ```
 
 Then load `dist/plugin` as a development folder, as described in [From source](#from-source). The names are the folder names in [plantuml-stdlib](https://github.com/plantuml/plantuml-stdlib/tree/master/stdlib). The build fails if the page grows beyond 9.5 MiB: Orca's limit is 10 MiB, and the default build is about 6 MiB. AWS alone adds about 2.7 MiB.

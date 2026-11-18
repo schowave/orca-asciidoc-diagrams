@@ -179,12 +179,12 @@ The frame has no file system, no network and no wasm.
   - `mise.toml` pins Node and defines the tasks (`setup`, `check`, `check-deep`, `test`, `build`, `media`, `fetch-stdlib`)
   - `mise.lock` holds checksums for all platforms
   - CI uses `jdx/mise-action`
-- **Dependencies:** Renovate (GitHub App) covers npm, mise and GitHub Actions
+- **Dependencies:** Renovate (GitHub App) covers the npm packages (installed with pnpm), mise and GitHub Actions
   - Patch and minor updates automerge once CI is green
   - Major updates get their own PRs and automerge once CI is green, except TypeScript majors, which wait for approval on the Dependency Dashboard
   - TypeScript and typescript-eslint update together in a group of their own, so a TypeScript release typescript-eslint does not support yet only blocks that PR
   - The PlantUML stdlib bundles come from plantuml.github.io and are not in npm; the release workflow refreshes them
-- **Releases:** `.github/workflows/release.yml` runs weekly on Mondays, on every push to `main` that changes `package-lock.json` (so a dependency update, a security fix above all, ships without waiting for Monday), or by dispatch with `patch`/`minor`/`major`:
+- **Releases:** `.github/workflows/release.yml` runs weekly on Mondays, on every push to `main` that changes `pnpm-lock.yaml` (so a dependency update, a security fix above all, ships without waiting for Monday), or by dispatch with `patch`/`minor`/`major`:
   1. Refresh the stdlib bundles
   2. Build, in a job with a read-only token (CI tests the release commit in step 3)
   3. If the build differs from the committed one (or on a dispatched minor/major), bump the version and changelog and open a pull request from `release/vX.Y.Z` with the token of the GitHub App `orca-asciidoc-release`. It merges by itself once CI is green; `tag-release.yml` then tags the release commit and creates the GitHub release with the signed provenance (ADR 0005)

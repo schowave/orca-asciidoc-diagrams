@@ -30,11 +30,11 @@ version bump, so it needs a way onto `main` that passes this check.
 
 - The repository holds one secret, the app's private key. The app can only write contents and pull requests of this
   repository; its tokens live for an hour.
-- The workflow has two jobs. `build` runs npm and the build scripts with a read-only token and passes the release
+- The workflow has two jobs. `build` runs pnpm and the build scripts with a read-only token and passes the release
   commit on as a patch; `publish` gets the app token and runs only git and gh.
 - The publish job accepts the patch only as exactly one commit that changes nothing but `RELEASE_PATHS` (renames
-  counted as deletions), with `package.json`, `package-lock.json` and `orca-plugin.json` changed only in their
-  version, and a version that matches the manifest. CI on the release pull request checks that the committed
+  counted as deletions), with `package.json` and `orca-plugin.json` changed only in their version (the lockfile
+  not at all), and a version that matches the manifest. CI on the release pull request checks that the committed
   `editor/index.html` equals the bundle it built and tested from the merge result.
 - If `main` moves before the merge so that the bundle no longer matches, CI on the pull request turns red and it does
   not merge. The next run of the same version force-pushes a new build to the same branch and pull request.

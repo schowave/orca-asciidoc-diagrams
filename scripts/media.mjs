@@ -1,5 +1,5 @@
 // Generates the listing images (images/) and the README demo GIF (docs/media/demo.gif) from the real
-// build, rendered in the same Orca-like sandboxed frame the tests use. Run after `npm run build`:
+// build, rendered in the same Orca-like sandboxed frame the tests use. Run after `pnpm run build`:
 //   node scripts/media.mjs
 import fs from 'node:fs'
 import os from 'node:os'

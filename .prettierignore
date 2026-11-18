@@ -6,7 +6,7 @@ test-results/
 playwright-report/
 docs/
 images/
-package-lock.json
+pnpm-lock.yaml
 mise.lock
 # prose is not auto-formatted
 *.md

@@ -6,7 +6,7 @@ An Orca plugin that renders AsciiDoc with inline PlantUML, Mermaid and Graphviz 
 
 Setup in a fresh clone: `mise trust && mise run setup`.
 
-Run `mise run check` (same as `npm run check`) after every change. It runs Prettier, ESLint, `tsc --noEmit` (strict), the TODO rule and the unit tests, and stops at the first failure. Fix every failure it reports.
+Run `mise run check` (same as `pnpm run check`) after every change. It runs Prettier, ESLint, `tsc --noEmit` (strict), the TODO rule and the unit tests, and stops at the first failure. Fix every failure it reports.
 
 Slower stages and when they are required:
 
@@ -23,7 +23,7 @@ Use `gh` for pull requests and CI results, for example `gh pr create` and `gh ru
 
 Mark agent changes with the commit trailer `Assisted-by: Claude Code`, so the history can tell them apart (not enforced).
 
-Work in a git worktree of your own, not in the main checkout. In a new worktree run `mise run setup`: it reuses the npm and Playwright caches. Tests use no ports or databases, so worktrees can run them in parallel; each writes to its own `test-results/` and `dist/`.
+Work in a git worktree of your own, not in the main checkout. In a new worktree run `mise run setup`: it reuses the pnpm store and the Playwright cache. Tests use no ports or databases, so worktrees can run them in parallel; each writes to its own `test-results/` and `dist/`.
 
 ## Definition of done
 
@@ -43,7 +43,7 @@ Work in a git worktree of your own, not in the main checkout. In a new worktree 
 
 - Code style is Prettier's (no semicolons, single quotes, 120 columns) and ESLint's: camelCase for variables and functions (UPPER_CASE for constants, PascalCase for types and the engine globals `PlantUML` and `Viz`), complexity at most 11, files under 500 lines.
 - Tests are `*.test.ts` in `tests/unit/` and use `node:test`. They import from `src/text.ts`, `src/convert.ts`, `src/base122.ts` and `scripts/`. Put logic you want to test in a module without DOM or bundler imports, as `src/text.ts` does; `src/editor.ts` needs the DOM and is covered by the browser harness.
-- TODO and FIXME carry an author and a link: `// TODO(name): … https://…` (enforced by `npm run todo:check`).
+- TODO and FIXME carry an author and a link: `// TODO(name): … https://…` (enforced by `pnpm run todo:check`).
 - The frame has no network, no `eval`, no WebAssembly. Do not add code that needs them. Everything lazy-loaded goes through `src/payloads.ts`.
 - `editor/index.html` and `dist/` are build output. Do not edit them; the weekly release workflow rebuilds and commits `editor/index.html`.
 - The PlantUML stdlib bundles are not committed: the Orca catalog refuses archives in a plugin. `node scripts/fetch-stdlib.mjs` downloads them, and `mise run setup` does that too. Only `vendor/plantuml-stdlib.lock.json` (SHA-256 per library) is committed; `--update` rewrites it, and the weekly release workflow runs it. Never commit binary files: the catalog rejects the whole release.
