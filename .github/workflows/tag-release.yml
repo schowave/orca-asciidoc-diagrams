@@ -2,16 +2,21 @@ name: Tag release
 
 # When a release pull request (release/vX.Y.Z, opened by release.yml) is merged into main: sign the build provenance
 # of the bundle, tag the release commit and create the GitHub release. The Orca catalog picks up the tag.
+# If a run fails, dispatch this workflow on main: it picks up the latest release merge that has no tag yet.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
   tag:
-    if: startsWith(github.event.head_commit.message, 'Merge pull request') && contains(github.event.head_commit.message, '/release/v')
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.head_commit.message, 'Merge pull request') &&
+      contains(github.event.head_commit.message, '/release/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: write # push the tag, create the release
@@ -20,12 +25,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 2
+          fetch-depth: 0 # the release merge may lie further back when dispatched
       # The tag goes on the release commit itself (the merge's second parent): that is the commit CI tested.
       - name: Find the release commit
         id: release
         run: |
-          commit=$(git rev-parse HEAD^2)
+          merge=$(git log -1 --merges --format=%H --grep='/release/v' HEAD)
+          [ -n "$merge" ] || { echo "::error::No release merge on main"; exit 1; }
+          commit=$(git rev-parse "$merge^2")
           git checkout -q "$commit"
           version=$(jq -r .version orca-plugin.json)
           [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::No release version in orca-plugin.json"; exit 1; }
@@ -50,8 +57,10 @@ jobs:
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |
           cp "$BUNDLE" "$RUNNER_TEMP/index.html.intoto.jsonl"
-          # The release notes are the body of the release pull request.
-          gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].body' > "$RUNNER_TEMP/release-notes.md"
+          # The release notes are this version's section of CHANGELOG.md in the release commit.
+          awk -v h="## $VERSION" '$0 == h { on = 1; next } on && /^## / { exit } on' CHANGELOG.md |
+            sed '/./,$!d' > "$RUNNER_TEMP/release-notes.md"
+          grep -q . "$RUNNER_TEMP/release-notes.md" || { echo "::error::CHANGELOG.md has no notes for $VERSION"; exit 1; }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "v$VERSION" -m "v$VERSION" "$COMMIT"

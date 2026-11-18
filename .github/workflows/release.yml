@@ -1,9 +1,10 @@
 name: Release
 
 # Weekly, after Renovate's Monday run, and whenever the dependencies on main change (a Renovate security update, say):
-# refresh the PlantUML stdlib bundles, rebuild the plugin, and open a release pull request when the plugin differs
-# from the last released one (ADR 0005). Dev-only updates leave the bundle as it is and release nothing. The pull
-# request merges by itself once CI is green; tag-release.yml then tags and publishes the release.
+# rebuild the plugin and open a release pull request when it differs from the last released one (ADR 0005). The
+# weekly and dispatched runs also refresh the PlantUML stdlib bundles; a dependency push builds with the locked ones,
+# so a dev-only update leaves the bundle as it is and releases nothing. The pull request merges by itself once CI is
+# green; tag-release.yml then tags and publishes the release.
 #
 # Two jobs, so no third-party code runs with write access: `build` runs pnpm and the build scripts with a
 # read-only token and hands the release commit over as a patch; `publish` only runs git and gh.
@@ -46,8 +47,9 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
       - run: pnpm install --frozen-lockfile
-      - name: Refresh PlantUML stdlib bundles
-        run: node scripts/fetch-stdlib.mjs --update
+      - name: Fetch the PlantUML stdlib bundles (refresh them on the weekly and dispatched runs)
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then node scripts/fetch-stdlib.mjs; else node scripts/fetch-stdlib.mjs --update; fi
       # Only the build: CI tests the release commit in the publish job, and main accepts it only after that.
       - name: Build
         run: pnpm run build
@@ -131,8 +133,11 @@ jobs:
           # --force: a branch left over from an earlier run of the same version is replaced, and its open pull
           # request then shows this commit.
           git push --force origin "release/v$VERSION"
-          gh pr list --head "release/v$VERSION" --state open --json number --jq '.[0].number' | grep -q . ||
-            gh pr create --base main --head "release/v$VERSION" --title "Release v$VERSION" \
-              --body-file "$RUNNER_TEMP/release/release-notes.md"
+          notes="$RUNNER_TEMP/release/release-notes.md"
+          if gh pr list --head "release/v$VERSION" --state open --json number --jq '.[0].number' | grep -q .; then
+            gh pr edit "release/v$VERSION" --body-file "$notes" # this build's notes, not the first run's
+          else
+            gh pr create --base main --head "release/v$VERSION" --title "Release v$VERSION" --body-file "$notes"
+          fi
           # --match-head-commit: only this checked commit may be merged.
           gh pr merge "release/v$VERSION" --auto --merge --match-head-commit "$(git rev-parse HEAD)"

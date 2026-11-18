@@ -43,7 +43,7 @@ PlantUML's pure-Java layout engine, used because Graphviz's wasm build cannot ru
 Orca's 10 MiB limit on the entry. `scripts/build.mjs` fails above 9.5 MiB.
 
 **Release**:
-A tagged, versioned build published as a GitHub release by the weekly workflow `.github/workflows/release.yml`. Only releases change `editor/index.html` on `main`.
+A tagged, versioned build published as a GitHub release. `.github/workflows/release.yml` opens the release pull request; when it is merged, `.github/workflows/tag-release.yml` tags it and creates the GitHub release. Only releases change `editor/index.html` on `main`.
 
 **Release branch**:
 `release/vX.Y.Z`, where the release workflow puts the release commit with a pull request that merges by itself once CI is green (ADR 0005).

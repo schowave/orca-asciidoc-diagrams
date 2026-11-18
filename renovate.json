@@ -18,7 +18,7 @@
       "labels": ["major-update"]
     },
     {
-      "description": "TypeScript and typescript-eslint minors and patches in a group of their own, so a TypeScript version typescript-eslint does not support yet (its peer range, enforced by npm) fails only this PR, not the shared non-major group. The PR turns green by itself once typescript-eslint supports the new version. matchPackageNames matches the npm package, so an alias such as \"typescript\": \"npm:@typescript/native@…\" is not included.",
+      "description": "TypeScript and typescript-eslint minors and patches in a group of their own, so a TypeScript version typescript-eslint does not support yet (its peer range, enforced by pnpm with strictPeerDependencies) fails only this PR, not the shared non-major group. The PR turns green by itself once typescript-eslint supports the new version. matchPackageNames matches the npm package, so an alias such as \"typescript\": \"npm:@typescript/native@…\" is not included.",
       "matchPackageNames": ["typescript", "typescript-eslint", "@typescript-eslint/**"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "typescript and typescript-eslint",
@@ -29,6 +29,11 @@
       "matchPackageNames": ["typescript"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "pnpm is pinned twice, in mise.toml (mise manager) and in packageManager (npm manager): update both in one PR so they cannot drift",
+      "matchPackageNames": ["pnpm"],
+      "groupName": "pnpm"
     }
   ],
   "lockFileMaintenance": {

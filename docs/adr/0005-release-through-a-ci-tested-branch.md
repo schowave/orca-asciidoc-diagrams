@@ -36,8 +36,13 @@ version bump, so it needs a way onto `main` that passes this check.
   counted as deletions), with `package.json` and `orca-plugin.json` changed only in their version (the lockfile
   not at all), and a version that matches the manifest. CI on the release pull request checks that the committed
   `editor/index.html` equals the bundle it built and tested from the merge result.
-- If `main` moves before the merge so that the bundle no longer matches, CI on the pull request turns red and it does
-  not merge. The next run of the same version force-pushes a new build to the same branch and pull request.
+- If `main` moves while a release pull request is open, its CI does not run again by itself. The pull request still
+  merges if it has no conflicts (the ruleset does not require it to be up to date); the tag then points at the
+  tested release commit. If it conflicts (another change edited `CHANGELOG.md`, say), it waits for the next run of
+  the release workflow (a dependency push or Monday), which force-pushes a new build to the same branch and pull
+  request and updates its notes.
+- If tagging fails after the merge, `release.mjs` refuses to cut the next version until `tag-release.yml` has been
+  run again by dispatch, so no version is skipped.
 - `main` gets a merge commit per release; the tag points at the release commit below it.
 - This guards against a build job that was tampered with, not against a compromised dependency in CI itself: CI
   runs the same dependencies.
