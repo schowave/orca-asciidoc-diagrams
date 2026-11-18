@@ -18,9 +18,16 @@
       "labels": ["major-update"]
     },
     {
-      "description": "TypeScript minors and majors wait for approval on the Dependency Dashboard: typescript-eslint declares peer typescript <6.1.0 and refuses to load with 6.1+/7 (https://github.com/typescript-eslint/typescript-eslint/issues/10940); a red 6.1 would also block the grouped non-major PR. typescript-eslint adds TS 7 as a separate \"@typescript/native\" package, so remove this rule only once its typescript peer range itself covers the new version. matchDepNames keeps an @typescript/native alias out of this rule.",
-      "matchDepNames": ["typescript"],
-      "matchUpdateTypes": ["minor", "major"],
+      "description": "TypeScript and typescript-eslint minors and patches in a group of their own, so a TypeScript version typescript-eslint does not support yet (its peer range, enforced by npm) fails only this PR, not the shared non-major group. The PR turns green by itself once typescript-eslint supports the new version. matchPackageNames matches the npm package, so an alias such as \"typescript\": \"npm:@typescript/native@…\" is not included.",
+      "matchPackageNames": ["typescript", "typescript-eslint", "@typescript-eslint/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "typescript and typescript-eslint",
+      "automerge": true
+    },
+    {
+      "description": "A TypeScript major waits for approval on the Dependency Dashboard: typescript-eslint supports TypeScript 7 only through the separate @typescript/native package.",
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
     }
   ],
