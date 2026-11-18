@@ -22,6 +22,7 @@ workflows, so CI would never run on such a commit by itself.
 ## Consequences
 
 - `ci.yml` accepts `workflow_dispatch`; the release job needs `actions: write`.
-- A release takes one CI run longer (about 4 minutes).
+- The release job itself only builds; the dispatched CI run does the tests, so they run once per release.
 - If `main` moves while CI runs (for example a Renovate merge), the fast-forward fails and the release is skipped
-  until the next run; the release branch is deleted either way.
+  until the next run (or a manual dispatch). The release branch is deleted afterwards, and a leftover one is
+  overwritten by the next run.
