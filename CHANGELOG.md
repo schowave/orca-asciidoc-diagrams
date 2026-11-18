@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.3.1
+
 - Each release now carries the plugin bundle with a signed build provenance, so you can check that it was built by this repository's release workflow
 
 ## 1.3.0
