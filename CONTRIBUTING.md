@@ -24,13 +24,14 @@ mise tasks             # list all tasks
 |---|---|
 | `src/` | The preview: `bootstrap.ts` (startup), `convert.ts` (AsciiDoc to HTML), `editor.ts` (rendering), `diagram-tools.ts` and `zoom.ts` (diagram toolbar and zoom overlay), `text.ts` (pure helpers), `payloads.ts` and `base122.ts` (lazy brotli payloads), `payloads/` (highlight.js and KaTeX entries), `editor.css` |
 | `scripts/build.mjs` | Builds `editor/index.html`. It fails above 9.5 MiB, below Orca's 10 MiB limit |
-| `tests/unit/` | Unit tests (`*.test.ts`, run by `node --test`) for `src/text.ts`, `src/convert.ts`, `src/base122.ts` and `scripts/` |
+| `tests/unit/` | Unit tests (`*.test.ts`, run by `node --test`) for `src/text.ts`, `src/convert.ts`, `src/base122.ts` and `scripts/`; `properties.test.ts` fuzzes them with random inputs ([fast-check](https://fast-check.dev)) |
 | `tests/` | Sandbox harness (`orca-frame.mjs`: same sandbox, CSP and click policy as Orca, mocked `window.orca`) and fixtures |
 | `vendor/plantuml-stdlib.lock.json` | SHA-256 of each bundled PlantUML stdlib library. The libraries themselves are not committed, because the Orca catalog refuses archives. `mise run fetch-stdlib` downloads them into the gitignored `vendor/plantuml-stdlib/`, and `--update` pins new upstream versions; the release workflow does that weekly. The list is in `scripts/stdlib-list.mjs` |
 | `orca-plugin.json`, `editor/`, `images/` | The plugin as Orca installs it. `editor/index.html` is committed build output; the release workflow rebuilds and commits it |
 
 ## Pull requests
 
+- New behaviour comes with tests: unit tests in `tests/unit/` for logic, a fixture in `tests/fixtures/` for rendering. Bug fixes come with a test that failed before the fix.
 - Run `mise run check` and `mise run test` before you push; CI runs the same, plus `mise run check-deep`.
 - Changes users notice get a line under `## Unreleased` in [CHANGELOG.md](CHANGELOG.md), written for users. The release workflow turns it into the release notes.
 - Leave `editor/index.html` alone: the weekly release workflow rebuilds and commits it.

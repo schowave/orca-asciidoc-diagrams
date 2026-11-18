@@ -8,6 +8,14 @@ Please report it privately through [GitHub's private vulnerability reporting](ht
 
 You can expect a first answer within a week. Fixes ship as a new release, which Orca installs automatically for users of the plugin directory.
 
+## Verifying a release
+
+Every release after 1.3.0 attaches `index.html` (the bundle Orca installs) and its signed build provenance. Download `index.html` from the release and check it with the [GitHub CLI](https://cli.github.com):
+
+```sh
+gh attestation verify index.html --repo schowave/orca-asciidoc-diagrams
+```
+
 ## Supported versions
 
 Only the newest release gets fixes.

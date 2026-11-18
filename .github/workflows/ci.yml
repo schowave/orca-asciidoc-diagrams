@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The release workflow dispatches CI on its release branch: pushes made with GITHUB_TOKEN start no workflows.
+  workflow_dispatch:
 
 permissions:
   contents: read

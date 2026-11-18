@@ -7,6 +7,8 @@
 **Live AsciiDoc preview for [Orca](https://github.com/stablyai/orca), with PlantUML, Mermaid and Graphviz diagrams, rendered fully offline.**
 
 [![CI](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml/badge.svg)](https://github.com/schowave/orca-asciidoc-diagrams/actions/workflows/ci.yml)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/16890/badge)](https://www.bestpractices.dev/projects/16890)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/schowave/orca-asciidoc-diagrams/badge)](https://scorecard.dev/viewer/?uri=github.com/schowave/orca-asciidoc-diagrams)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Orca ≥ 1.4.246](https://img.shields.io/badge/Orca-%E2%89%A5%201.4.246-7c3aed.svg)](https://github.com/stablyai/orca)
 [![Orca plugin directory](https://img.shields.io/badge/Orca-plugin%20directory-7c3aed.svg)](https://orca.dev/plugins/schowave/orca-asciidoc-diagrams)
