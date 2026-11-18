@@ -42,6 +42,11 @@ const forced = ['minor', 'major'].includes(process.env.RELEASE_BUMP ?? '')
 if (!changed && !forced) process.exit(0) // the released plugin is up to date
 
 const manifest = readJson('orca-plugin.json')
+// A merged release whose tagging failed: release it first, or its version would be skipped.
+if (`v${manifest.version}` !== lastTag && !git('tag', '--list', `v${manifest.version}`)) {
+  console.error(`orca-plugin.json says ${manifest.version}, which has no tag. Run the "Tag release" workflow first.`)
+  process.exit(1)
+}
 // RELEASE_BUMP=minor|major for feature releases (workflow_dispatch input); scheduled runs are patches.
 const bump = process.env.RELEASE_BUMP || 'patch'
 const version = nextVersion(manifest.version, bump)

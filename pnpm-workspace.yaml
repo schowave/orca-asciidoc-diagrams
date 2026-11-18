@@ -1,2 +1,6 @@
+# esbuild's install script only checks its binary, which the build does not need; pnpm runs no other.
 allowBuilds:
   esbuild: false
+# Fail the install on a peer range violation (for example a TypeScript that typescript-eslint does not support yet),
+# so CI turns red instead of linting with an unsupported combination. renovate.json relies on it.
+strictPeerDependencies: true

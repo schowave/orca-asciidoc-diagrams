@@ -19,7 +19,6 @@ Scorecard (Signed-Releases) and the Best Practices badge ask for signed releases
 
 ## Consequences
 
-- The release job needs `id-token: write` and `attestations: write`; the workflow's default token stays read-only.
-- The provenance names the commit the workflow started from, not the release commit made later in the same run.
-- The attestation is made only after CI passed on the release commit and `main` was checked to be unchanged. Only if the atomic push of `main` and the tag fails in the seconds after that does it describe a bundle that was never released.
+- `tag-release.yml` signs the provenance when the release pull request is merged into `main` (ADR 0005); only that job has `id-token: write` and `attestations: write`.
+- The provenance names the merge commit on `main` that started the job; the tag points at the release commit below it, whose `editor/index.html` is the attested file. A bundle is only signed once it is on `main`.
 - Release assets are for verification only. The catalog keeps installing from the tag.
