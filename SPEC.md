@@ -181,7 +181,8 @@ The frame has no file system, no network and no wasm.
   - CI uses `jdx/mise-action`
 - **Dependencies:** Renovate (GitHub App) covers npm, mise and GitHub Actions
   - Patch and minor updates automerge once CI is green
-  - Major updates wait for review
+  - Major updates get their own PRs and automerge once CI is green, except TypeScript majors, which wait for approval on the Dependency Dashboard
+  - TypeScript and typescript-eslint update together in a group of their own, so a TypeScript release typescript-eslint does not support yet only blocks that PR
   - The PlantUML stdlib bundles come from plantuml.github.io and are not in npm; the release workflow refreshes them
 - **Releases:** `.github/workflows/release.yml` runs weekly on Mondays, or by dispatch with `patch`/`minor`/`major`:
   1. Refresh the stdlib bundles
@@ -219,4 +220,4 @@ The frame has no file system, no network and no wasm.
 | Security | Sanitize everything; never write to the document |
 | Size | Compress the embedded code (brotli) and encode it as base-122 text (ADR 0003); no trimming of tupadr3 |
 | Extra formats | Syntax highlighting, KaTeX math and Graphviz. WaveDrom, Nomnoml, Bytefield and BPMN only on request. D2, Svgbob, Pikchr, BlockDiag, Structurizr and Vega are impossible in the sandbox |
-| Maintenance | Renovate with automerge for patch and minor updates; weekly automatic patch releases through the community catalog |
+| Maintenance | Renovate with automerge for patch, minor and major updates (TypeScript majors after approval); weekly automatic patch releases through the community catalog |
