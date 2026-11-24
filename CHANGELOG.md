@@ -2,8 +2,11 @@
 
 ## Unreleased
 
+## 1.3.2
+
 - Release notes now list the updated libraries (Mermaid, PlantUML, DOMPurify and others) by version
 - Updates of these libraries, security fixes above all, are released right away instead of with the next weekly release
+- Updated dependencies: dompurify 3.4.18 → 3.5.0
 
 ## 1.3.1
 
